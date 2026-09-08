@@ -1,0 +1,7 @@
+{
+  "name": "VOXIA AI",
+  "description": "Advanced AI Voice Generation & Text-to-Speech SaaS Platform with real-time audio streaming, voice library, studio editor, and project management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
