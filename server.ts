@@ -70,28 +70,19 @@ app.use(rateLimiter);
 
 // 1. Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
-  const elevenKey = process.env.ELEVENLABS_API_KEY;
-  const hasValidElevenKey = Boolean(elevenKey && elevenKey.trim().length > 5 && elevenKey !== 'MY_ELEVENLABS_API_KEY');
-
-  const sonioxKey = process.env.SONIOX_API_KEY;
-  const hasValidSonioxKey = Boolean(sonioxKey && sonioxKey.trim().length > 5 && sonioxKey !== 'MY_SONIOX_API_KEY');
+  const apiKey = process.env.ELEVENLABS_API_KEY;
+  const hasValidApiKey = Boolean(apiKey && apiKey.trim().length > 5 && apiKey !== 'MY_ELEVENLABS_API_KEY');
 
   res.status(200).json({
     status: 'ok',
     service: 'VOXIA AI Audio Engine',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
-    elevenlabsConfigured: hasValidElevenKey,
-    sonioxConfigured: hasValidSonioxKey,
-    providers: {
-      elevenlabs: hasValidElevenKey,
-      soniox: hasValidSonioxKey,
-    },
+    elevenlabsConfigured: hasValidApiKey,
     frontendUrl: configuredFrontendUrl,
     environment: process.env.NODE_ENV || 'development',
   });
 });
-
 
 // 2. Ephemeral in-memory audio serving with HTTP 206 Range support (zero disk dependencies)
 app.get('/api/audio/:fileName', (req: Request, res: Response) => {
@@ -179,54 +170,6 @@ app.post('/api/settings/test-key', async (req: Request, res: Response) => {
     });
   }
 });
-
-// 3b. Soniox API key validation/test endpoint
-app.post('/api/settings/test-soniox-key', async (req: Request, res: Response) => {
-  const { apiKey } = req.body || {};
-  const keyToTest = apiKey || process.env.SONIOX_API_KEY;
-
-  if (!keyToTest || keyToTest.trim().length === 0) {
-    res.status(400).json({
-      success: false,
-      message: 'No Soniox API key provided to test.',
-    });
-    return;
-  }
-
-  try {
-    const checkRes = await fetch('https://api.soniox.com/v1/tts/models', {
-      headers: { Authorization: `Bearer ${keyToTest.trim()}` },
-    });
-
-    if (checkRes.status === 401 || checkRes.status === 403) {
-      res.status(401).json({
-        success: false,
-        valid: false,
-        message: 'Invalid Soniox API key or unauthorized by Soniox.',
-      });
-      return;
-    }
-
-    res.status(200).json({
-      success: true,
-      valid: true,
-      provider: 'soniox',
-      model: 'tts-rt-v2',
-      status: 'active',
-      message: 'Soniox API credentials verified and real-time engine ready.',
-    });
-  } catch (err: any) {
-    res.status(200).json({
-      success: true,
-      valid: true,
-      provider: 'soniox',
-      model: 'tts-rt-v2',
-      status: 'active',
-      message: 'Soniox credentials validated.',
-    });
-  }
-});
-
 
 // 4. Mount core API routes
 app.use('/api/tts', ttsRouter);

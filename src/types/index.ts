@@ -1,5 +1,3 @@
-export type TTSProviderType = 'elevenlabs' | 'soniox';
-
 export type NavigationTab =
   | 'landing'
   | 'dashboard'
@@ -23,13 +21,9 @@ export interface VoiceLabels {
 export interface Voice {
   voice_id: string;
   name: string;
-  provider?: TTSProviderType;
   category?: string;
   description?: string;
   preview_url?: string;
-  free_tier_compatible?: boolean;
-  is_paid_only?: boolean;
-  language?: string;
   labels?: VoiceLabels;
 }
 
@@ -44,7 +38,6 @@ export interface VoiceSettings {
 export interface TTSModel {
   id: string;
   name: string;
-  provider?: TTSProviderType;
   description: string;
   languages: string;
   latency: string;
@@ -53,8 +46,6 @@ export interface TTSModel {
 
 export interface Generation {
   id: string;
-  provider?: TTSProviderType;
-  language?: string;
   text: string;
   voiceId: string;
   voiceName: string;
@@ -69,10 +60,7 @@ export interface Generation {
   status: 'completed' | 'streaming' | 'failed';
   settings: VoiceSettings;
   projectId?: string;
-  wasFallenBack?: boolean;
-  fallbackNotice?: string;
 }
-
 
 export interface Project {
   id: string;
@@ -109,14 +97,8 @@ export interface HealthStatus {
   version: string;
   timestamp: string;
   elevenlabsConfigured: boolean;
-  sonioxConfigured?: boolean;
-  providers?: {
-    elevenlabs: boolean;
-    soniox: boolean;
-  };
   environment: string;
 }
-
 
 export interface ToastNotification {
   id: string;

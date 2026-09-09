@@ -49,19 +49,11 @@ export const VoiceCard: React.FC<VoiceCardProps> = ({
             </div>
           </div>
 
-          {voice.is_paid_only ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-950/70 text-amber-300 border border-amber-800/70">
-              Paid Tier
-            </span>
-          ) : voice.free_tier_compatible ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950/60 text-emerald-300 border border-emerald-800/50">
-              Free Ready
-            </span>
-          ) : voice.category ? (
+          {voice.category && (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700/80 capitalize">
               {voice.category}
             </span>
-          ) : null}
+          )}
         </div>
 
         {/* Labels / Badges */}

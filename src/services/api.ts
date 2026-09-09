@@ -5,14 +5,11 @@ import {
   UsageInfo,
   HealthStatus,
   VoiceSettings,
-  TTSProviderType,
 } from '../types';
 
 export interface TTSRequestOptions {
-  provider?: TTSProviderType;
   text: string;
   voiceId: string;
-  language?: string;
   modelId?: string;
   stability?: number;
   similarity?: number;
@@ -21,7 +18,6 @@ export interface TTSRequestOptions {
   outputFormat?: string;
   projectId?: string;
 }
-
 
 class ApiService {
   private baseUrl = '/api';
@@ -61,29 +57,16 @@ class ApiService {
   }
 
   // Voices
-  public async getVoices(refresh = false, provider?: TTSProviderType | 'all'): Promise<Voice[]> {
-    const params = new URLSearchParams();
-    if (refresh) params.append('refresh', 'true');
-    if (provider && provider !== 'all') params.append('provider', provider);
-    const queryString = params.toString() ? `?${params.toString()}` : '';
-
+  public async getVoices(refresh = false): Promise<Voice[]> {
     const res = await this.request<{ success: boolean; voices: Voice[]; provider: string; hasApiKey: boolean }>(
-      `/voices${queryString}`
+      `/voices${refresh ? '?refresh=true' : ''}`
     );
     return res.voices;
   }
 
-  public async getVoicesWithMetadata(
-    refresh = false,
-    provider?: TTSProviderType | 'all'
-  ): Promise<{ voices: Voice[]; provider: string; providers?: { elevenlabs: boolean; soniox: boolean }; hasApiKey: boolean }> {
-    const params = new URLSearchParams();
-    if (refresh) params.append('refresh', 'true');
-    if (provider && provider !== 'all') params.append('provider', provider);
-    const queryString = params.toString() ? `?${params.toString()}` : '';
-
-    return this.request<{ success: boolean; voices: Voice[]; provider: string; providers?: { elevenlabs: boolean; soniox: boolean }; hasApiKey: boolean }>(
-      `/voices${queryString}`
+  public async getVoicesWithMetadata(refresh = false): Promise<{ voices: Voice[]; provider: string; hasApiKey: boolean }> {
+    return this.request<{ success: boolean; voices: Voice[]; provider: string; hasApiKey: boolean }>(
+      `/voices${refresh ? '?refresh=true' : ''}`
     );
   }
 
@@ -128,7 +111,6 @@ class ApiService {
     const audioBlob = await res.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
 
-    const provider = (res.headers.get('x-tts-provider') as TTSProviderType) || options.provider;
     const voiceName = decodeURIComponent(res.headers.get('x-voice-name') || '') || 'Voice';
     const characterCount = parseInt(res.headers.get('x-character-count') || '0', 10) || options.text.length;
     const wordCount = parseInt(res.headers.get('x-word-count') || '0', 10) || options.text.split(/\s+/).filter(Boolean).length;
@@ -138,18 +120,12 @@ class ApiService {
     const downloadFilename = res.headers.get('x-download-filename') || `voxia-tts-${today}.${format}`;
     const id = res.headers.get('x-generation-id') || `gen_${Date.now()}`;
 
-    const wasFallenBack = res.headers.get('x-voice-fallback') === 'true';
-    const fallbackNotice = decodeURIComponent(res.headers.get('x-voice-fallback-notice') || '');
-    const voiceId = res.headers.get('x-voice-id') || options.voiceId;
-
     return {
       id,
-      provider,
-      language: options.language,
       text: options.text,
-      voiceId,
+      voiceId: options.voiceId,
       voiceName,
-      modelId: options.modelId || (provider === 'soniox' ? 'tts-rt-v2' : 'eleven_multilingual_v2'),
+      modelId: options.modelId || 'eleven_multilingual_v2',
       audioUrl,
       audioFileName: downloadFilename,
       format,
@@ -166,11 +142,8 @@ class ApiService {
         speed: options.speed ?? 1.0,
       },
       projectId: options.projectId,
-      wasFallenBack,
-      fallbackNotice: wasFallenBack ? (fallbackNotice || `Synthesized using ${voiceName} (standard free-tier compatible voice).`) : undefined,
     };
   }
-
 
   // TTS Streaming Generation (consumes binary chunks with Web Streams)
   public async streamTTS(
@@ -311,7 +284,7 @@ class ApiService {
     return res.usage;
   }
 
-  // Test ElevenLabs API key
+  // Test API key
   public async testApiKey(apiKey?: string): Promise<{ valid: boolean; tier?: string; message?: string }> {
     const res = await fetch(`${this.baseUrl}/settings/test-key`, {
       method: 'POST',
@@ -320,17 +293,6 @@ class ApiService {
     });
     return res.json();
   }
-
-  // Test Soniox API key
-  public async testSonioxKey(apiKey?: string): Promise<{ valid: boolean; model?: string; message?: string }> {
-    const res = await fetch(`${this.baseUrl}/settings/test-soniox-key`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiKey }),
-    });
-    return res.json();
-  }
 }
-
 
 export const api = new ApiService();

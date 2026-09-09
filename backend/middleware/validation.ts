@@ -6,7 +6,6 @@ const ALLOWED_MODELS = [
   'eleven_flash_v2_5',
   'eleven_v3',
   'eleven_monolingual_v1',
-  'tts-rt-v2',
 ];
 
 const ALLOWED_FORMATS = [
@@ -15,29 +14,10 @@ const ALLOWED_FORMATS = [
   'mp3_22050_32',
   'wav_44100_16',
   'pcm_16000',
-  'mp3',
-  'wav',
-  'pcm_s16le',
-  'flac',
-  'opus',
 ];
 
-const ALLOWED_PROVIDERS = ['elevenlabs', 'soniox'];
-
 export function validateTTSRequest(req: Request, res: Response, next: NextFunction): void {
-  const { provider, text, voiceId, modelId, stability, similarity, style, speed, outputFormat } = req.body || {};
-
-  // 0. Provider validation (if specified)
-  if (provider && typeof provider === 'string' && !ALLOWED_PROVIDERS.includes(provider.toLowerCase())) {
-    res.status(400).json({
-      success: false,
-      error: {
-        code: 'UNSUPPORTED_PROVIDER',
-        message: `Provider '${provider}' is not supported. Supported providers: ${ALLOWED_PROVIDERS.join(', ')}`,
-      },
-    });
-    return;
-  }
+  const { text, voiceId, modelId, stability, similarity, style, speed, outputFormat } = req.body || {};
 
   // 1. Text validation
   if (!text || typeof text !== 'string') {
@@ -63,12 +43,12 @@ export function validateTTSRequest(req: Request, res: Response, next: NextFuncti
     return;
   }
 
-  if (trimmed.length > 30000) {
+  if (trimmed.length > 5000) {
     res.status(400).json({
       success: false,
       error: {
         code: 'TEXT_TOO_LONG',
-        message: `Text exceeds maximum allowed length of 30,000 characters (received ${trimmed.length} characters).`,
+        message: `Text exceeds maximum allowed length of 5,000 characters (received ${trimmed.length} characters).`,
       },
     });
     return;

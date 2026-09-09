@@ -4,13 +4,11 @@ import { voiceService } from '../services/voiceService.js';
 export async function getVoices(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const forceRefresh = req.query.refresh === 'true';
-    const providerFilter = (req.query.provider as any) || 'all';
-    const result = await voiceService.getVoices(forceRefresh, providerFilter);
+    const result = await voiceService.getVoices(forceRefresh);
 
     res.status(200).json({
       success: true,
       provider: result.provider,
-      providers: result.providers,
       hasApiKey: result.hasApiKey,
       count: result.voices.length,
       voices: result.voices,
@@ -19,7 +17,6 @@ export async function getVoices(req: Request, res: Response, next: NextFunction)
     next(err);
   }
 }
-
 
 export async function getVoiceById(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {

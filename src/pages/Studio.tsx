@@ -179,35 +179,18 @@ export const Studio: React.FC<StudioProps> = ({
         setGenerationStatus('ready');
         onGenerationComplete(gen);
 
-        if (gen.wasFallenBack) {
-          addToast({
-            type: 'warning',
-            title: 'Voice Auto-Adjusted',
-            message: gen.fallbackNotice || 'Synthesized using Roger because the selected voice requires an ElevenLabs paid plan.',
-          });
-        } else {
-          addToast({
-            type: 'success',
-            title: 'Audio Generated',
-            message: `Voice "${gen.voiceName}" synthesized successfully (${gen.characterCount.toLocaleString()} characters).`,
-          });
-        }
+        addToast({
+          type: 'success',
+          title: 'Audio Generated',
+          message: `Voice "${gen.voiceName}" synthesized successfully (${gen.characterCount} characters).`,
+        });
       } catch (err: any) {
         setGenerationStatus('error');
-        if (err.message && (err.message.includes('Free users cannot use library voices') || err.message.includes('402'))) {
-          onSelectVoice('CwhRBWXzGAHq8TQ4Fs17');
-          addToast({
-            type: 'warning',
-            title: 'Switched to Roger (Free-Ready)',
-            message: 'Selected voice requires an ElevenLabs paid subscription. Auto-selected Roger. Click Generate to proceed.',
-          });
-        } else {
-          addToast({
-            type: 'error',
-            title: 'Generation Failed',
-            message: err.message || 'Failed to synthesize speech with ElevenLabs API.',
-          });
-        }
+        addToast({
+          type: 'error',
+          title: 'Generation Failed',
+          message: err.message || 'Failed to synthesize speech with ElevenLabs API.',
+        });
       }
     }
   };
@@ -294,26 +277,6 @@ export const Studio: React.FC<StudioProps> = ({
               </button>
             )}
           </div>
-
-          {/* Paid-tier voice warning banner if a library/professional voice is active */}
-          {selectedVoice?.is_paid_only && (
-            <div className="p-3.5 rounded-xl bg-amber-950/30 border border-amber-800/50 text-amber-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>
-                  <strong>{selectedVoice.name}</strong> is a library voice requiring an ElevenLabs paid subscription. On free accounts, VOXIA will automatically synthesize using <strong>Roger</strong>.
-                </span>
-              </div>
-              <button
-                id="btn-switch-to-free-voice"
-                type="button"
-                onClick={() => onSelectVoice('CwhRBWXzGAHq8TQ4Fs17')}
-                className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-100 text-xs font-semibold whitespace-nowrap transition-colors"
-              >
-                Switch to Roger (Free-Ready)
-              </button>
-            </div>
-          )}
 
           {/* Text Editor */}
           <TextEditor

@@ -209,7 +209,7 @@ export const TextEditor: React.FC<TextEditorProps> = ({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5 font-mono">
             <span className="text-slate-200 font-semibold">{characterCount.toLocaleString()}</span>
-            <span className="text-slate-400">/ 30,000 chars</span>
+            <span className="text-slate-400">/ 5,000 chars</span>
           </div>
           <div className="flex items-center gap-1.5 font-mono">
             <span className="text-slate-200 font-semibold">{wordCount}</span>
@@ -221,16 +221,9 @@ export const TextEditor: React.FC<TextEditorProps> = ({
           </div>
         </div>
 
-        {characterCount > 4000 && characterCount <= 28000 && (
-          <span className="inline-flex items-center gap-1.5 text-cyan-400 font-medium text-[11px] bg-cyan-950/40 border border-cyan-800/50 px-2 py-0.5 rounded-full">
-            <Sparkles className="w-3 h-3 text-cyan-400" />
-            <span>Multi-Section Smart Engine ({Math.ceil(characterCount / 4000)} parts)</span>
-          </span>
-        )}
-
-        {characterCount > 28000 && (
+        {characterCount > 4500 && (
           <span className="text-amber-400 font-medium text-[11px]">
-            Approaching limit ({(30000 - characterCount).toLocaleString()} chars remaining)
+            Approaching limit ({(5000 - characterCount).toLocaleString()} chars remaining)
           </span>
         )}
       </div>

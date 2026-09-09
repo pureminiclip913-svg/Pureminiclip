@@ -229,15 +229,6 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                       <div className="truncate">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-sm text-slate-100">{voice.name}</span>
-                          {voice.is_paid_only ? (
-                            <span className="px-1.5 py-0.2 rounded text-[10px] bg-amber-950/70 border border-amber-800/70 text-amber-300 font-semibold">
-                              Paid Tier
-                            </span>
-                          ) : voice.free_tier_compatible ? (
-                            <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-950/50 border border-emerald-800/40 text-emerald-300 font-semibold">
-                              Free Ready
-                            </span>
-                          ) : null}
                           {voice.labels?.gender && (
                             <span className="px-1.5 py-0.2 rounded text-[10px] bg-slate-800 text-slate-400 capitalize">
                               {voice.labels.gender}

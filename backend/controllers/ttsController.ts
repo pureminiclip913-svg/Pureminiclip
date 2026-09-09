@@ -1,19 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
-import { ttsManager } from '../services/ttsManager.js';
+import { ttsService } from '../services/ttsService.js';
 import { storageService } from '../services/storageService.js';
 import { databaseService } from '../services/databaseService.js';
 import { voiceService } from '../services/voiceService.js';
 import { usageService } from '../services/usageService.js';
-import { GenerationRecord, TTSProviderType } from '../types.js';
+import { GenerationRecord } from '../types.js';
 
 export async function generateTTS(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const {
-      provider,
       text,
       voiceId,
-      language = 'en',
-      modelId,
+      modelId = 'eleven_multilingual_v2',
       stability = 0.5,
       similarity = 0.75,
       style = 0.0,
@@ -41,27 +39,20 @@ export async function generateTTS(req: Request, res: Response, next: NextFunctio
     const voice = await voiceService.getVoiceById(voiceId);
     const voiceName = voice?.name || 'Voice';
 
-    // Generate speech using unified TTS manager (routes to ElevenLabs or Soniox)
-    const result = await ttsManager.generateSpeech(
-      {
-        text: trimmedText,
-        voiceId,
-        language,
-        modelId,
-        voiceSettings: {
-          stability: Number(stability),
-          similarity_boost: Number(similarity),
-          style: Number(style),
-          use_speaker_boost: true,
-          speed: Number(speed),
-        },
-        outputFormat,
+    // Generate speech securely via ElevenLabs API
+    const result = await ttsService.generateSpeech({
+      text: trimmedText,
+      voiceId,
+      modelId,
+      voiceSettings: {
+        stability: Number(stability),
+        similarity_boost: Number(similarity),
+        style: Number(style),
+        use_speaker_boost: true,
+        speed: Number(speed),
       },
-      provider as TTSProviderType | undefined
-    );
-
-    const effectiveVoiceName = result.wasFallenBack && result.fallbackVoiceName ? result.fallbackVoiceName : voiceName;
-    const effectiveVoiceId = result.wasFallenBack && result.fallbackVoiceId ? result.fallbackVoiceId : voiceId;
+      outputFormat,
+    });
 
     // Compute metrics and browser download filename
     const wordCount = trimmedText.split(/\s+/).filter(Boolean).length;
@@ -77,12 +68,10 @@ export async function generateTTS(req: Request, res: Response, next: NextFunctio
     // Save generation metadata record to DB for session & history tracking
     const generationRecord: GenerationRecord = {
       id: genId,
-      provider: result.provider,
-      language: language || undefined,
       text: trimmedText,
-      voiceId: effectiveVoiceId,
-      voiceName: effectiveVoiceName,
-      modelId: modelId || (result.provider === 'soniox' ? 'tts-rt-v2' : 'eleven_multilingual_v2'),
+      voiceId,
+      voiceName,
+      modelId,
       audioUrl: `/api/audio/${downloadFileName}`,
       audioFileName: downloadFileName,
       format: result.format,
@@ -99,8 +88,6 @@ export async function generateTTS(req: Request, res: Response, next: NextFunctio
         speed: Number(speed),
       },
       projectId: projectId || undefined,
-      wasFallenBack: result.wasFallenBack,
-      fallbackNotice: result.fallbackNotice,
     };
     await databaseService.createGeneration(generationRecord);
 
@@ -112,14 +99,10 @@ export async function generateTTS(req: Request, res: Response, next: NextFunctio
       'Content-Type': result.contentType,
       'Content-Length': result.audioBuffer.length,
       'Content-Disposition': `inline; filename="${downloadFileName}"`,
-      'X-TTS-Provider': result.provider,
       'X-Generation-Id': genId,
-      'X-Voice-Name': encodeURIComponent(effectiveVoiceName),
-      'X-Voice-Id': effectiveVoiceId,
-      'X-Voice-Fallback': result.wasFallenBack ? 'true' : 'false',
-      'X-Voice-Fallback-Name': result.fallbackVoiceName || '',
-      'X-Voice-Fallback-Notice': encodeURIComponent(result.fallbackNotice || ''),
-      'X-Model-Id': modelId || (result.provider === 'soniox' ? 'tts-rt-v2' : 'eleven_multilingual_v2'),
+      'X-Voice-Name': encodeURIComponent(voiceName),
+      'X-Voice-Id': voiceId,
+      'X-Model-Id': modelId,
       'X-Character-Count': String(trimmedText.length),
       'X-Word-Count': String(wordCount),
       'X-Duration-Seconds': String(estimatedDuration),
@@ -135,11 +118,9 @@ export async function generateTTS(req: Request, res: Response, next: NextFunctio
 export async function streamTTS(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const {
-      provider,
       text,
       voiceId,
-      language = 'en',
-      modelId,
+      modelId = 'eleven_multilingual_v2',
       stability = 0.5,
       similarity = 0.75,
       style = 0.0,
@@ -166,29 +147,22 @@ export async function streamTTS(req: Request, res: Response, next: NextFunction)
     const voice = await voiceService.getVoiceById(voiceId);
     const voiceName = voice?.name || 'Voice';
 
-    const { stream, contentType, format, provider: activeProvider, wasFallenBack, fallbackVoiceName } = await ttsManager.streamSpeech(
-      {
-        text: trimmedText,
-        voiceId,
-        language,
-        modelId,
-        voiceSettings: {
-          stability: Number(stability),
-          similarity_boost: Number(similarity),
-          style: Number(style),
-          use_speaker_boost: true,
-          speed: Number(speed),
-        },
-        outputFormat,
+    const { stream, contentType } = await ttsService.streamSpeech({
+      text: trimmedText,
+      voiceId,
+      modelId,
+      voiceSettings: {
+        stability: Number(stability),
+        similarity_boost: Number(similarity),
+        style: Number(style),
+        use_speaker_boost: true,
+        speed: Number(speed),
       },
-      provider as TTSProviderType | undefined
-    );
-
-    const effectiveVoiceName = wasFallenBack && fallbackVoiceName ? fallbackVoiceName : voiceName;
-    const effectiveVoiceId = wasFallenBack ? 'CwhRBWXzGAHq8TQ4Fs17' : voiceId;
+      outputFormat,
+    });
 
     const today = new Date().toISOString().split('T')[0];
-    const ext = format || (outputFormat.startsWith('wav') ? 'wav' : outputFormat.startsWith('pcm') ? 'raw' : 'mp3');
+    const ext = outputFormat.startsWith('wav') ? 'wav' : outputFormat.startsWith('pcm') ? 'raw' : 'mp3';
     const downloadFileName = `voxia-tts-${today}.${ext}`;
     const wordCount = trimmedText.split(/\s+/).filter(Boolean).length;
     const estimatedDuration = Math.max(1, Math.round((wordCount / 140) * 60));
@@ -199,15 +173,10 @@ export async function streamTTS(req: Request, res: Response, next: NextFunction)
     res.setHeader('Transfer-Encoding', 'chunked');
     res.setHeader('Content-Disposition', `inline; filename="${downloadFileName}"`);
     res.setHeader('X-Voxia-Streaming', 'true');
-    res.setHeader('X-TTS-Provider', activeProvider);
     res.setHeader('X-Generation-Id', genId);
-    res.setHeader('X-Voice-Name', encodeURIComponent(effectiveVoiceName));
-    res.setHeader('X-Voice-Id', effectiveVoiceId);
-    res.setHeader('X-Voice-Fallback', wasFallenBack ? 'true' : 'false');
-    if (wasFallenBack && fallbackVoiceName) {
-      res.setHeader('X-Voice-Fallback-Name', fallbackVoiceName);
-    }
-    res.setHeader('X-Model-Id', modelId || (activeProvider === 'soniox' ? 'tts-rt-v2' : 'eleven_multilingual_v2'));
+    res.setHeader('X-Voice-Name', encodeURIComponent(voiceName));
+    res.setHeader('X-Voice-Id', voiceId);
+    res.setHeader('X-Model-Id', modelId);
     res.setHeader('X-Character-Count', String(trimmedText.length));
     res.setHeader('X-Word-Count', String(wordCount));
     res.setHeader('X-Duration-Seconds', String(estimatedDuration));
@@ -242,12 +211,10 @@ export async function streamTTS(req: Request, res: Response, next: NextFunction)
 
         const record: GenerationRecord = {
           id: genId,
-          provider: activeProvider,
-          language: language || undefined,
           text: trimmedText,
-          voiceId: effectiveVoiceId,
-          voiceName: effectiveVoiceName,
-          modelId: modelId || (activeProvider === 'soniox' ? 'tts-rt-v2' : 'eleven_multilingual_v2'),
+          voiceId,
+          voiceName,
+          modelId,
           audioUrl: `/api/audio/${downloadFileName}`,
           audioFileName: downloadFileName,
           format: ext,
@@ -264,7 +231,6 @@ export async function streamTTS(req: Request, res: Response, next: NextFunction)
             speed: Number(speed),
           },
           projectId: projectId || undefined,
-          wasFallenBack,
         };
 
         await databaseService.createGeneration(record);
