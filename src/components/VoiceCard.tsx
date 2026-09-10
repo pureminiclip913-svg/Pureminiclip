@@ -49,11 +49,28 @@ export const VoiceCard: React.FC<VoiceCardProps> = ({
             </div>
           </div>
 
-          {voice.category && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700/80 capitalize">
-              {voice.category}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5 flex-wrap justify-end">
+            {voice.provider === 'google' || voice.voice_id.startsWith('google-') ? (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-700/60 shadow-sm flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Google Free
+              </span>
+            ) : voice.provider === 'sarvam' || voice.voice_id.startsWith('sarvam-') ? (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-950/80 text-orange-400 border border-orange-700/60 shadow-sm flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                Sarvam AI
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-cyan-950/60 text-cyan-400 border border-cyan-800/60">
+                ElevenLabs
+              </span>
+            )}
+            {voice.category && voice.category !== 'google_free' && voice.category !== 'sarvam_ai' && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700/80 capitalize">
+                {voice.category}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Labels / Badges */}

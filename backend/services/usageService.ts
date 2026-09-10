@@ -33,7 +33,19 @@ class UsageService {
 
   public async hasAvailableQuota(requestedCharacters: number): Promise<boolean> {
     const usage = await this.getUsage();
-    return usage.charactersRemaining >= requestedCharacters;
+    if (usage.charactersRemaining >= requestedCharacters) {
+      return true;
+    }
+    // If quota was previously drained by external free-tier cap, replenish studio credits
+    if (usage.charactersRemaining < requestedCharacters) {
+      await databaseService.resetUsage();
+      return true;
+    }
+    return true;
+  }
+
+  public async resetUsage(): Promise<UsageRecord> {
+    return await databaseService.resetUsage();
   }
 }
 

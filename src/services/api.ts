@@ -97,10 +97,17 @@ class ApiService {
     });
 
     if (!res.ok) {
-      let errMessage = 'Speech synthesis failed';
+      let errMessage = `Speech synthesis failed (${res.status})`;
       try {
-        const errData = await res.json();
-        errMessage = errData?.error?.message || errData?.message || errMessage;
+        const text = await res.text();
+        try {
+          const errData = JSON.parse(text);
+          errMessage = errData?.error?.message || errData?.message || errMessage;
+        } catch {
+          if (text && text.length < 200 && !text.includes('<!DOCTYPE')) {
+            errMessage = text;
+          }
+        }
       } catch {
         // Non-JSON response
       }
@@ -163,12 +170,19 @@ class ApiService {
       });
 
       if (!response.ok) {
-        let errMessage = 'Streaming synthesis failed';
+        let errMessage = `Streaming synthesis failed (${response.status})`;
         try {
-          const errData = await response.json();
-          errMessage = errData?.error?.message || errData?.message || errMessage;
+          const text = await response.text();
+          try {
+            const errData = JSON.parse(text);
+            errMessage = errData?.error?.message || errData?.message || errMessage;
+          } catch {
+            if (text && text.length < 200 && !text.includes('<!DOCTYPE')) {
+              errMessage = text;
+            }
+          }
         } catch {
-          // Response was not JSON
+          // Response was not text/JSON
         }
         throw new Error(errMessage);
       }
@@ -189,6 +203,10 @@ class ApiService {
           totalBytes += value.length;
           onChunk(value, totalBytes);
         }
+      }
+
+      if (chunks.length === 0) {
+        throw new Error('Streaming connection closed before receiving audio data.');
       }
 
       const contentType = response.headers.get('content-type') || 'audio/mpeg';
@@ -284,9 +302,26 @@ class ApiService {
     return res.usage;
   }
 
+  public async resetUsage(): Promise<UsageInfo> {
+    const res = await this.request<{ success: boolean; usage: UsageInfo }>('/usage/reset', {
+      method: 'POST',
+    });
+    return res.usage;
+  }
+
   // Test API key
   public async testApiKey(apiKey?: string): Promise<{ valid: boolean; tier?: string; message?: string }> {
     const res = await fetch(`${this.baseUrl}/settings/test-key`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey }),
+    });
+    return res.json();
+  }
+
+  // Test Sarvam AI API key
+  public async testSarvamApiKey(apiKey?: string): Promise<{ valid: boolean; model?: string; provider?: string; message?: string }> {
+    const res = await fetch(`${this.baseUrl}/settings/test-sarvam-key`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ apiKey }),

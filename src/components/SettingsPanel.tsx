@@ -21,6 +21,14 @@ export const AVAILABLE_MODELS: TTSModel[] = [
     badge: 'Popular',
   },
   {
+    id: 'google_neural_tts',
+    name: 'Google Neural TTS',
+    description: 'Ultra-fast neural voice synthesizer with free zero-quota English and Hindi voices.',
+    languages: 'English & Hindi',
+    latency: '~120ms',
+    badge: '100% Free',
+  },
+  {
     id: 'eleven_turbo_v2_5',
     name: 'Eleven Turbo v2.5',
     description: 'Balanced high quality with fast inference speed across 32 languages.',

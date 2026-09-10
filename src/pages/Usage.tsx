@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Gauge,
   Sparkles,
@@ -8,19 +8,47 @@ import {
   ShieldCheck,
   CheckCircle2,
   ArrowRight,
+  RefreshCw,
 } from 'lucide-react';
-import { UsageInfo, NavigationTab } from '../types';
+import { UsageInfo, NavigationTab, ToastNotification } from '../types';
+import { api } from '../services/api';
 
 interface UsageProps {
   usage: UsageInfo | null;
   onNavigate: (tab: NavigationTab) => void;
+  onRefreshUsage?: () => Promise<void>;
+  addToast?: (toast: Omit<ToastNotification, 'id'>) => void;
 }
 
-export const Usage: React.FC<UsageProps> = ({ usage, onNavigate }) => {
-  const count = usage?.characterCount || 14250;
-  const limit = usage?.characterLimit || 100000;
-  const remaining = usage?.charactersRemaining || limit - count;
+export const Usage: React.FC<UsageProps> = ({ usage, onNavigate, onRefreshUsage, addToast }) => {
+  const [isReplenishing, setIsReplenishing] = useState(false);
+  const count = usage?.characterCount ?? 14250;
+  const limit = usage?.characterLimit ?? 100000;
+  const remaining = usage?.charactersRemaining ?? Math.max(0, limit - count);
   const percent = Math.min(100, Math.round((count / limit) * 100));
+
+  const handleReplenish = async () => {
+    setIsReplenishing(true);
+    try {
+      await api.resetUsage();
+      if (onRefreshUsage) {
+        await onRefreshUsage();
+      }
+      addToast?.({
+        type: 'success',
+        title: 'Credits Replenished',
+        message: 'Studio character allowance reset to 100,000 credits.',
+      });
+    } catch (err: any) {
+      addToast?.({
+        type: 'error',
+        title: 'Replenish Failed',
+        message: err.message || 'Could not reset usage.',
+      });
+    } finally {
+      setIsReplenishing(false);
+    }
+  };
 
   return (
     <div className="flex-1 min-h-screen bg-[#07090e] p-6 lg:p-10 space-y-8">
@@ -35,9 +63,21 @@ export const Usage: React.FC<UsageProps> = ({ usage, onNavigate }) => {
           </p>
         </div>
 
-        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 self-start sm:self-auto">
-          Active Plan: {usage?.tier || 'Creator Pro'}
-        </span>
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <button
+            id="btn-replenish-credits"
+            onClick={handleReplenish}
+            disabled={isReplenishing}
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isReplenishing ? 'animate-spin text-cyan-400' : ''}`} />
+            <span>Replenish 100k Credits</span>
+          </button>
+
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+            Active Plan: {usage?.tier || 'Creator Pro'}
+          </span>
+        </div>
       </div>
 
       {/* Main Quota Card */}

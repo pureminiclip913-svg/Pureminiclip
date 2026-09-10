@@ -28,11 +28,14 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [providerFilter, setProviderFilter] = useState<'all' | 'google' | 'sarvam' | 'elevenlabs'>('all');
   const [genderFilter, setGenderFilter] = useState<'all' | 'female' | 'male'>('all');
   const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
 
   const selectedVoice = voices.find((v) => v.voice_id === selectedVoiceId) || voices[0];
+  const isSelectedVoiceGoogle = selectedVoice?.provider === 'google' || selectedVoice?.voice_id?.startsWith('google-');
+  const isSelectedVoiceSarvam = selectedVoice?.provider === 'sarvam' || selectedVoice?.voice_id?.startsWith('sarvam-');
 
   // Stop preview on modal close
   useEffect(() => {
@@ -64,6 +67,14 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
   };
 
   const filteredVoices = voices.filter((v) => {
+    const isGoogle = v.provider === 'google' || v.voice_id.startsWith('google-');
+    const isSarvam = v.provider === 'sarvam' || v.voice_id.startsWith('sarvam-');
+    const matchesProvider =
+      providerFilter === 'all' ||
+      (providerFilter === 'google' && isGoogle) ||
+      (providerFilter === 'sarvam' && isSarvam) ||
+      (providerFilter === 'elevenlabs' && !isGoogle && !isSarvam);
+
     const matchesSearch =
       v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       v.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -76,7 +87,7 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
       (genderFilter === 'female' && voiceGender.includes('female')) ||
       (genderFilter === 'male' && voiceGender.includes('male') && !voiceGender.includes('female'));
 
-    return matchesSearch && matchesGender;
+    return matchesProvider && matchesSearch && matchesGender;
   });
 
   return (
@@ -89,12 +100,31 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
         className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-900/90 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all text-left group"
       >
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-cyan-600/30 to-blue-600/30 border border-cyan-500/30 flex items-center justify-center text-cyan-300 font-bold text-sm shrink-0">
+          <div className={`w-9 h-9 rounded-lg border flex items-center justify-center font-bold text-sm shrink-0 ${
+            isSelectedVoiceGoogle
+              ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+              : isSelectedVoiceSarvam
+              ? 'bg-orange-950/40 border-orange-500/40 text-orange-300'
+              : 'bg-gradient-to-tr from-cyan-600/30 to-blue-600/30 border-cyan-500/30 text-cyan-300'
+          }`}>
             {selectedVoice?.name?.charAt(0) || 'V'}
           </div>
           <div className="truncate">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-slate-100 text-sm">{selectedVoice?.name || 'Select a Voice'}</span>
+              {isSelectedVoiceGoogle ? (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-700/60">
+                  Google Free
+                </span>
+              ) : isSelectedVoiceSarvam ? (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-orange-950/80 text-orange-400 border border-orange-700/60">
+                  Sarvam AI
+                </span>
+              ) : (
+                <span className="px-1.5 py-0.5 rounded text-[10px] bg-cyan-950/60 text-cyan-400 border border-cyan-800/60">
+                  ElevenLabs
+                </span>
+              )}
               {selectedVoice?.labels?.gender && (
                 <span className="px-1.5 py-0.2 rounded text-[10px] bg-slate-800 text-slate-400 capitalize">
                   {selectedVoice.labels.gender}
@@ -161,42 +191,96 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                 />
               </div>
 
-              {/* Gender filter tabs */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setGenderFilter('all')}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                    genderFilter === 'all'
-                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                      : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200'
-                  }`}
-                >
-                  All Voices
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGenderFilter('female')}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                    genderFilter === 'female'
-                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                      : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200'
-                  }`}
-                >
-                  Female
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGenderFilter('male')}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                    genderFilter === 'male'
-                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                      : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200'
-                  }`}
-                >
-                  Male
-                </button>
-                <span className="ml-auto text-xs text-slate-400">
+              {/* Provider and Gender Filter Tabs */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setProviderFilter('all')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                      providerFilter === 'all'
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                        : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200'
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProviderFilter('google')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+                      providerFilter === 'google'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        : 'bg-slate-900 text-emerald-400 border border-emerald-950 hover:text-emerald-300'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    Google Free
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProviderFilter('sarvam')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+                      providerFilter === 'sarvam'
+                        ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                        : 'bg-slate-900 text-orange-400 border border-orange-950 hover:text-orange-300'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                    Sarvam AI
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProviderFilter('elevenlabs')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                      providerFilter === 'elevenlabs'
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                        : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200'
+                    }`}
+                  >
+                    ElevenLabs
+                  </button>
+                </div>
+
+                <div className="h-4 w-px bg-slate-800 mx-1 hidden sm:block" />
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setGenderFilter('all')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                      genderFilter === 'all'
+                        ? 'bg-slate-800 text-slate-200 border border-slate-700'
+                        : 'bg-slate-900/60 text-slate-400 border border-slate-800'
+                    }`}
+                  >
+                    All Genders
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGenderFilter('female')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                      genderFilter === 'female'
+                        ? 'bg-slate-800 text-slate-200 border border-slate-700'
+                        : 'bg-slate-900/60 text-slate-400 border border-slate-800'
+                    }`}
+                  >
+                    Female
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGenderFilter('male')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                      genderFilter === 'male'
+                        ? 'bg-slate-800 text-slate-200 border border-slate-700'
+                        : 'bg-slate-900/60 text-slate-400 border border-slate-800'
+                    }`}
+                  >
+                    Male
+                  </button>
+                </div>
+
+                <span className="ml-auto text-xs text-slate-400 font-mono">
                   {filteredVoices.length} found
                 </span>
               </div>
@@ -207,6 +291,8 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
               {filteredVoices.map((voice) => {
                 const isSelected = voice.voice_id === selectedVoiceId;
                 const isPreviewing = previewingVoiceId === voice.voice_id;
+                const isVoiceGoogle = voice.provider === 'google' || voice.voice_id.startsWith('google-');
+                const isVoiceSarvam = voice.provider === 'sarvam' || voice.voice_id.startsWith('sarvam-');
 
                 return (
                   <div
@@ -223,12 +309,31 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-3 overflow-hidden">
-                      <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 shrink-0">
+                      <div className={`w-8 h-8 rounded-lg border flex items-center justify-center text-xs font-bold shrink-0 ${
+                        isVoiceGoogle
+                          ? 'bg-emerald-950/50 border-emerald-800/50 text-emerald-300'
+                          : isVoiceSarvam
+                          ? 'bg-orange-950/50 border-orange-800/50 text-orange-300'
+                          : 'bg-slate-800 border-slate-700 text-slate-300'
+                      }`}>
                         {voice.name.charAt(0)}
                       </div>
                       <div className="truncate">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="font-semibold text-sm text-slate-100">{voice.name}</span>
+                          {isVoiceGoogle ? (
+                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-700/60">
+                              Google Free
+                            </span>
+                          ) : isVoiceSarvam ? (
+                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-orange-950/80 text-orange-400 border border-orange-700/60">
+                              Sarvam AI
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-cyan-950/60 text-cyan-400 border border-cyan-800/60">
+                              ElevenLabs
+                            </span>
+                          )}
                           {voice.labels?.gender && (
                             <span className="px-1.5 py-0.2 rounded text-[10px] bg-slate-800 text-slate-400 capitalize">
                               {voice.labels.gender}

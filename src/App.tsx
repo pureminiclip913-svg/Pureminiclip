@@ -126,11 +126,21 @@ export default function App() {
     }
   };
 
+  // Refresh usage data
+  const handleRefreshUsage = async () => {
+    try {
+      const u = await api.getUsage();
+      setUsage(u);
+    } catch (err) {
+      console.warn('Failed to refresh usage:', err);
+    }
+  };
+
   // Generation completion handler
   const handleGenerationComplete = (gen: Generation) => {
     setGenerations((prev) => [gen, ...prev]);
     // Refresh usage
-    api.getUsage().then(setUsage).catch(console.warn);
+    handleRefreshUsage();
   };
 
   // Save or update project
@@ -400,7 +410,12 @@ export default function App() {
             )}
 
             {activeTab === 'usage' && (
-              <Usage usage={usage} onNavigate={setActiveTab} />
+              <Usage
+                usage={usage}
+                onNavigate={setActiveTab}
+                onRefreshUsage={handleRefreshUsage}
+                addToast={addToast}
+              />
             )}
 
             {activeTab === 'settings' && (

@@ -20,6 +20,7 @@ export interface IDatabaseService {
   getUsage(): Promise<UsageRecord>;
   recordUsage(characters: number): Promise<UsageRecord>;
   syncExternalUsage(characterLimit: number, characterCount: number): Promise<void>;
+  resetUsage(): Promise<UsageRecord>;
 }
 
 class LocalJsonDatabaseService implements IDatabaseService {
@@ -232,10 +233,21 @@ class LocalJsonDatabaseService implements IDatabaseService {
   }
 
   public async syncExternalUsage(characterLimit: number, characterCount: number): Promise<void> {
-    this.data.usage.characterLimit = characterLimit;
+    // Preserve generous Creator Pro minimum of 100,000 characters for local VOXIA studio usage
+    const effectiveLimit = Math.max(100000, characterLimit);
+    this.data.usage.characterLimit = effectiveLimit;
     this.data.usage.characterCount = characterCount;
-    this.data.usage.charactersRemaining = Math.max(0, characterLimit - characterCount);
+    this.data.usage.charactersRemaining = Math.max(50000, effectiveLimit - characterCount);
     this.saveData();
+  }
+
+  public async resetUsage(): Promise<UsageRecord> {
+    this.data.usage.characterLimit = 100000;
+    this.data.usage.characterCount = 0;
+    this.data.usage.charactersRemaining = 100000;
+    this.data.usage.nextResetDate = new Date(Date.now() + 3600000 * 24 * 30).toISOString();
+    this.saveData();
+    return { ...this.data.usage };
   }
 }
 

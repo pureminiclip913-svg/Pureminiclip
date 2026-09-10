@@ -72,6 +72,8 @@ app.use(rateLimiter);
 app.get('/api/health', (req: Request, res: Response) => {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   const hasValidApiKey = Boolean(apiKey && apiKey.trim().length > 5 && apiKey !== 'MY_ELEVENLABS_API_KEY');
+  const sarvamKey = process.env.SARVAM_API_KEY;
+  const hasValidSarvamKey = Boolean(sarvamKey && sarvamKey.trim().length > 5 && sarvamKey !== 'MY_SARVAM_API_KEY');
 
   res.status(200).json({
     status: 'ok',
@@ -79,6 +81,7 @@ app.get('/api/health', (req: Request, res: Response) => {
     version: '1.0.0',
     timestamp: new Date().toISOString(),
     elevenlabsConfigured: hasValidApiKey,
+    sarvamConfigured: hasValidSarvamKey,
     frontendUrl: configuredFrontendUrl,
     environment: process.env.NODE_ENV || 'development',
   });
@@ -171,7 +174,61 @@ app.post('/api/settings/test-key', async (req: Request, res: Response) => {
   }
 });
 
-// 4. Mount core API routes
+// 4. Sarvam AI key validation/test endpoint
+app.post('/api/settings/test-sarvam-key', async (req: Request, res: Response) => {
+  const { apiKey } = req.body || {};
+  const keyToTest = apiKey || process.env.SARVAM_API_KEY;
+
+  if (!keyToTest || keyToTest.trim().length === 0) {
+    res.status(400).json({
+      success: false,
+      message: 'No Sarvam AI API key provided to test.',
+    });
+    return;
+  }
+
+  try {
+    const checkRes = await fetch('https://api.sarvam.ai/text-to-speech', {
+      method: 'POST',
+      headers: {
+        'api-subscription-key': keyToTest.trim(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: 'नमस्ते',
+        language_code: 'hi-IN',
+        model: 'bulbul:v3',
+        speaker: 'shubh',
+      }),
+    });
+
+    if (checkRes.ok) {
+      res.status(200).json({
+        success: true,
+        valid: true,
+        model: 'bulbul:v3',
+        provider: 'Sarvam AI',
+        status: 'active',
+        supportedLanguages: ['hi-IN', 'bn-IN', 'ta-IN', 'te-IN', 'mr-IN', 'gu-IN', 'kn-IN', 'ml-IN', 'pa-IN', 'od-IN'],
+      });
+    } else {
+      const errorText = await checkRes.text();
+      res.status(checkRes.status).json({
+        success: false,
+        valid: false,
+        message: errorText ? `Sarvam AI: ${errorText.slice(0, 100)}` : 'Invalid API key or unauthorized by Sarvam AI.',
+      });
+    }
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      valid: false,
+      message: err?.message || 'Failed to connect to Sarvam AI API.',
+    });
+  }
+});
+
+// 5. Mount core API routes
 app.use('/api/tts', ttsRouter);
 app.use('/api/voices', voicesRouter);
 app.use('/api/generations', generationsRouter);

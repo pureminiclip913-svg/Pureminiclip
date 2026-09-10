@@ -1,6 +1,182 @@
 {
   "generations": [
     {
+      "id": "gen_1789059610716_y6mpjb7",
+      "text": "Welcome to VOXIA AI voice synthesis.",
+      "voiceId": "google-en-us-journey",
+      "voiceName": "Google US English (Journey)",
+      "modelId": "google_neural_tts",
+      "audioUrl": "/api/audio/voxia-tts-2026-09-10.mp3",
+      "audioFileName": "voxia-tts-2026-09-10.mp3",
+      "format": "mp3",
+      "characterCount": 36,
+      "wordCount": 6,
+      "durationSeconds": 3,
+      "createdAt": "2026-09-10T17:00:10.716Z",
+      "status": "completed",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75,
+        "style": 0,
+        "use_speaker_boost": true,
+        "speed": 1
+      }
+    },
+    {
+      "id": "gen_1789059605561_u2i0cba",
+      "text": "नमस्ते, आपका स्वागत है।",
+      "voiceId": "google-hi-in",
+      "voiceName": "Google Hindi (Devanagari Expressive)",
+      "modelId": "google_neural_tts",
+      "audioUrl": "/api/audio/voxia-tts-2026-09-10.mp3",
+      "audioFileName": "voxia-tts-2026-09-10.mp3",
+      "format": "mp3",
+      "characterCount": 23,
+      "wordCount": 4,
+      "durationSeconds": 2,
+      "createdAt": "2026-09-10T17:00:05.561Z",
+      "status": "completed",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75,
+        "style": 0,
+        "use_speaker_boost": true,
+        "speed": 1
+      }
+    },
+    {
+      "id": "gen_1789059250990_sykvdty",
+      "text": "Testing real time streaming with Google TTS voices.",
+      "voiceId": "google-en-us-journey",
+      "voiceName": "Google US English (Journey)",
+      "modelId": "google_neural_tts",
+      "audioUrl": "/api/audio/voxia-tts-2026-09-10.mp3",
+      "audioFileName": "voxia-tts-2026-09-10.mp3",
+      "format": "mp3",
+      "characterCount": 51,
+      "wordCount": 8,
+      "durationSeconds": 3,
+      "createdAt": "2026-09-10T16:54:11.117Z",
+      "status": "completed",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75,
+        "style": 0,
+        "use_speaker_boost": true,
+        "speed": 1
+      }
+    },
+    {
+      "id": "gen_1789059246689_e8o2xkf",
+      "text": "Hello world",
+      "voiceId": "google-en-us-journey",
+      "voiceName": "Google US English (Journey)",
+      "modelId": "google_neural_tts",
+      "audioUrl": "/api/audio/voxia-tts-2026-09-10.mp3",
+      "audioFileName": "voxia-tts-2026-09-10.mp3",
+      "format": "mp3",
+      "characterCount": 11,
+      "wordCount": 2,
+      "durationSeconds": 1,
+      "createdAt": "2026-09-10T16:54:06.689Z",
+      "status": "completed",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75,
+        "style": 0,
+        "use_speaker_boost": true,
+        "speed": 1
+      }
+    },
+    {
+      "id": "gen_1789058547622_gd3txma",
+      "text": "Standard synthesis completes in real time with high fidelity.",
+      "voiceId": "21m00Tcm4TlvDq8ikWAM",
+      "voiceName": "Rachel",
+      "modelId": "eleven_multilingual_v2",
+      "audioUrl": "/api/audio/voxia-tts-2026-09-10.mp3",
+      "audioFileName": "voxia-tts-2026-09-10.mp3",
+      "format": "mp3",
+      "characterCount": 61,
+      "wordCount": 9,
+      "durationSeconds": 4,
+      "createdAt": "2026-09-10T16:42:27.622Z",
+      "status": "completed",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75,
+        "style": 0,
+        "use_speaker_boost": true,
+        "speed": 1
+      }
+    },
+    {
+      "id": "gen_1789058546971_zra5xq9",
+      "text": "Streaming synthesis is now verified, resilient, and fully operational.",
+      "voiceId": "21m00Tcm4TlvDq8ikWAM",
+      "voiceName": "Rachel",
+      "modelId": "eleven_multilingual_v2",
+      "audioUrl": "/api/audio/voxia-tts-2026-09-10.mp3",
+      "audioFileName": "voxia-tts-2026-09-10.mp3",
+      "format": "mp3",
+      "characterCount": 70,
+      "wordCount": 9,
+      "durationSeconds": 4,
+      "createdAt": "2026-09-10T16:42:27.111Z",
+      "status": "completed",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75,
+        "style": 0,
+        "use_speaker_boost": true,
+        "speed": 1
+      }
+    },
+    {
+      "id": "gen_1789058455527_gzf86pm",
+      "text": "Welcome to VOXIA AI speech studio. Ready for generation.",
+      "voiceId": "21m00Tcm4TlvDq8ikWAM",
+      "voiceName": "Rachel",
+      "modelId": "eleven_multilingual_v2",
+      "audioUrl": "/api/audio/voxia-tts-2026-09-10.mp3",
+      "audioFileName": "voxia-tts-2026-09-10.mp3",
+      "format": "mp3",
+      "characterCount": 56,
+      "wordCount": 9,
+      "durationSeconds": 4,
+      "createdAt": "2026-09-10T16:40:55.527Z",
+      "status": "completed",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75,
+        "style": 0,
+        "use_speaker_boost": true,
+        "speed": 1
+      }
+    },
+    {
+      "id": "gen_1789058449367_u7vfit4",
+      "text": "In the quiet moments before dawn, the world holds its breath.",
+      "voiceId": "21m00Tcm4TlvDq8ikWAM",
+      "voiceName": "Rachel",
+      "modelId": "eleven_multilingual_v2",
+      "audioUrl": "/api/audio/voxia-tts-2026-09-10.mp3",
+      "audioFileName": "voxia-tts-2026-09-10.mp3",
+      "format": "mp3",
+      "characterCount": 61,
+      "wordCount": 11,
+      "durationSeconds": 5,
+      "createdAt": "2026-09-10T16:40:49.490Z",
+      "status": "completed",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75,
+        "style": 0,
+        "use_speaker_boost": true,
+        "speed": 1
+      }
+    },
+    {
       "id": "gen_1788889171961_8z7tud9",
       "text": "Welcome to VOXIA AI. Your browser download is ready.",
       "voiceId": "CwhRBWXzGAHq8TQ4Fs17",
@@ -85,11 +261,11 @@
   ],
   "usage": {
     "tier": "Creator Pro",
-    "characterLimit": 10000,
-    "characterCount": 52,
-    "charactersRemaining": 9948,
+    "characterLimit": 100000,
+    "characterCount": 10000,
+    "charactersRemaining": 90000,
     "nextResetDate": "2026-09-26T17:25:08.451Z",
-    "recentGenerations": 8,
+    "recentGenerations": 12,
     "historyUsage": [
       {
         "date": "2026-09-02",
@@ -115,6 +291,11 @@
         "date": "2026-09-08",
         "characters": 1929,
         "generations": 2
+      },
+      {
+        "date": "2026-09-10",
+        "characters": 248,
+        "generations": 4
       }
     ]
   }

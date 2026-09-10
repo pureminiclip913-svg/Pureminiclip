@@ -26,10 +26,15 @@ export const Voices: React.FC<VoicesProps> = ({
   isRefreshing = false,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedProvider, setSelectedProvider] = useState<'all' | 'google' | 'sarvam' | 'elevenlabs'>('all');
   const [selectedGender, setSelectedGender] = useState<string>('all');
   const [selectedAccent, setSelectedAccent] = useState<string>('all');
   const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+
+  const googleCount = voices.filter((v) => v.provider === 'google' || v.voice_id.startsWith('google-')).length;
+  const sarvamCount = voices.filter((v) => v.provider === 'sarvam' || v.voice_id.startsWith('sarvam-')).length;
+  const elevenLabsCount = Math.max(0, voices.length - googleCount - sarvamCount);
 
   // Extract unique accents
   const uniqueAccents = Array.from(
@@ -57,6 +62,14 @@ export const Voices: React.FC<VoicesProps> = ({
   };
 
   const filteredVoices = voices.filter((v) => {
+    const isGoogle = v.provider === 'google' || v.voice_id.startsWith('google-');
+    const isSarvam = v.provider === 'sarvam' || v.voice_id.startsWith('sarvam-');
+    const matchesProvider =
+      selectedProvider === 'all' ||
+      (selectedProvider === 'google' && isGoogle) ||
+      (selectedProvider === 'sarvam' && isSarvam) ||
+      (selectedProvider === 'elevenlabs' && !isGoogle && !isSarvam);
+
     const matchesSearch =
       v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       v.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -72,7 +85,7 @@ export const Voices: React.FC<VoicesProps> = ({
     const matchesAccent =
       selectedAccent === 'all' || v.labels?.accent === selectedAccent;
 
-    return matchesSearch && matchesGender && matchesAccent;
+    return matchesProvider && matchesSearch && matchesGender && matchesAccent;
   });
 
   return (
@@ -110,6 +123,56 @@ export const Voices: React.FC<VoicesProps> = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500/50"
           />
+        </div>
+
+        {/* Provider Filter Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+          <button
+            id="filter-provider-all"
+            onClick={() => setSelectedProvider('all')}
+            className={`px-3 py-2 rounded-xl text-xs font-medium transition-colors whitespace-nowrap ${
+              selectedProvider === 'all'
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200'
+            }`}
+          >
+            All ({voices.length})
+          </button>
+          <button
+            id="filter-provider-google"
+            onClick={() => setSelectedProvider('google')}
+            className={`px-3 py-2 rounded-xl text-xs font-medium transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+              selectedProvider === 'google'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                : 'bg-slate-900 text-emerald-400/90 border border-emerald-900/40 hover:text-emerald-300'
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            Google Free ({googleCount})
+          </button>
+          <button
+            id="filter-provider-sarvam"
+            onClick={() => setSelectedProvider('sarvam')}
+            className={`px-3 py-2 rounded-xl text-xs font-medium transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+              selectedProvider === 'sarvam'
+                ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40 shadow-sm'
+                : 'bg-slate-900 text-orange-400/90 border border-orange-950 hover:text-orange-300'
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+            Sarvam AI ({sarvamCount})
+          </button>
+          <button
+            id="filter-provider-elevenlabs"
+            onClick={() => setSelectedProvider('elevenlabs')}
+            className={`px-3 py-2 rounded-xl text-xs font-medium transition-colors whitespace-nowrap ${
+              selectedProvider === 'elevenlabs'
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-200'
+            }`}
+          >
+            ElevenLabs ({elevenLabsCount})
+          </button>
         </div>
 
         {/* Gender Filter Chips */}

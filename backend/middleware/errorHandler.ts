@@ -11,6 +11,10 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
   if (apiKey && apiKey.length > 5) {
     message = message.replace(new RegExp(apiKey, 'g'), '[REDACTED_API_KEY]');
   }
+  const sarvamKey = process.env.SARVAM_API_KEY;
+  if (sarvamKey && sarvamKey.length > 5) {
+    message = message.replace(new RegExp(sarvamKey, 'g'), '[REDACTED_API_KEY]');
+  }
 
   console.error(`[API Error ${statusCode}] [${errorCode}]: ${message}`);
 

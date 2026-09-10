@@ -15,6 +15,9 @@ export interface VoiceLabels {
   age?: string;
   gender?: string;
   use_case?: string;
+  language_code?: string;
+  provider?: string;
+  free?: string;
   [key: string]: string | undefined;
 }
 
@@ -24,6 +27,10 @@ export interface Voice {
   category?: string;
   description?: string;
   preview_url?: string;
+  provider?: 'google' | 'sarvam' | 'elevenlabs' | string;
+  isFree?: boolean;
+  sampleText?: string;
+  languageCode?: string;
   labels?: VoiceLabels;
 }
 
@@ -97,6 +104,7 @@ export interface HealthStatus {
   version: string;
   timestamp: string;
   elevenlabsConfigured: boolean;
+  sarvamConfigured?: boolean;
   environment: string;
 }
 

@@ -34,6 +34,10 @@ export const Settings: React.FC<SettingsProps> = ({
   const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'connected' | 'error'>('unknown');
   const [statusMessage, setStatusMessage] = useState<string>('Not tested');
 
+  const [isCheckingSarvam, setIsCheckingSarvam] = useState(false);
+  const [sarvamStatus, setSarvamStatus] = useState<'unknown' | 'connected' | 'error'>('unknown');
+  const [sarvamMessage, setSarvamMessage] = useState<string>('Not tested');
+
   const handleTestConnection = async () => {
     setIsCheckingConnection(true);
     setConnectionStatus('unknown');
@@ -46,7 +50,7 @@ export const Settings: React.FC<SettingsProps> = ({
         setStatusMessage(
           res.elevenlabsConfigured
             ? 'ElevenLabs API connected & authenticated successfully.'
-            : 'Backend connected (running with high-fidelity mock voice catalog).'
+            : 'Backend operational (running with high-fidelity mock voice catalog).'
         );
         addToast({
           type: 'success',
@@ -66,6 +70,43 @@ export const Settings: React.FC<SettingsProps> = ({
       });
     } finally {
       setIsCheckingConnection(false);
+    }
+  };
+
+  const handleTestSarvamConnection = async () => {
+    setIsCheckingSarvam(true);
+    setSarvamStatus('unknown');
+    setSarvamMessage('Testing Sarvam AI Bulbul v3 API key...');
+
+    try {
+      const res = await api.testSarvamApiKey();
+      if (res.valid) {
+        setSarvamStatus('connected');
+        setSarvamMessage('Sarvam AI connected! Bulbul v3 Hindi voices active.');
+        addToast({
+          type: 'success',
+          title: 'Sarvam AI Verified',
+          message: 'Sarvam AI Bulbul v3 API key authenticated successfully.',
+        });
+      } else {
+        setSarvamStatus('error');
+        setSarvamMessage(res.message || 'Sarvam AI API key not configured or invalid.');
+        addToast({
+          type: 'warning',
+          title: 'Sarvam AI Notice',
+          message: res.message || 'Add SARVAM_API_KEY to your .env file.',
+        });
+      }
+    } catch (err: any) {
+      setSarvamStatus('error');
+      setSarvamMessage(err.message || 'Failed to reach Sarvam AI test endpoint.');
+      addToast({
+        type: 'error',
+        title: 'Sarvam Check Failed',
+        message: err.message || 'Could not verify Sarvam AI key.',
+      });
+    } finally {
+      setIsCheckingSarvam(false);
     }
   };
 
@@ -133,6 +174,57 @@ export const Settings: React.FC<SettingsProps> = ({
 
           <p className="text-[11px] text-slate-400 leading-relaxed">
             Note: Your <code className="text-cyan-400 bg-slate-900 px-1 py-0.5 rounded">ELEVENLABS_API_KEY</code> is kept strictly on the Express server in your environment configuration and is never exposed in browser code.
+          </p>
+        </div>
+
+        {/* Sarvam AI Connection Card */}
+        <div className="p-6 rounded-2xl bg-[#0c101a] border border-slate-800/90 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-sm text-slate-100">Sarvam AI API Connectivity</h3>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-orange-500/10 border border-orange-500/20 text-orange-400">
+                    Bulbul v3
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Powers 12 expressive, natural Indian language & Hindi voices.
+                </p>
+              </div>
+            </div>
+
+            <button
+              id="btn-test-sarvam-connection"
+              type="button"
+              onClick={handleTestSarvamConnection}
+              disabled={isCheckingSarvam}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-200 hover:text-white hover:border-orange-500/40 transition-all"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isCheckingSarvam ? 'animate-spin text-orange-400' : ''}`} />
+              <span>Test Connection</span>
+            </button>
+          </div>
+
+          {/* Status badge */}
+          <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center gap-3">
+            {sarvamStatus === 'connected' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : sarvamStatus === 'error' ? (
+              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+            ) : (
+              <Radio className="w-4 h-4 text-slate-500 shrink-0" />
+            )}
+            <span className="text-xs text-slate-300 font-mono">
+              Status: <strong className="text-slate-100">{sarvamMessage}</strong>
+            </span>
+          </div>
+
+          <p className="text-[11px] text-slate-400 leading-relaxed">
+            Note: Set <code className="text-orange-400 bg-slate-900 px-1 py-0.5 rounded">SARVAM_API_KEY</code> in your server environment or Settings menu. All requests route server-side with zero exposure to client browsers.
           </p>
         </div>
 

@@ -21,29 +21,34 @@ export async function generateTTS(req: Request, res: Response, next: NextFunctio
     } = req.body;
 
     const trimmedText = text.trim();
+    const isGoogleVoice = String(voiceId).startsWith('google-');
+    const isSarvamVoice = String(voiceId).startsWith('sarvam-');
+    const effectiveModelId = isGoogleVoice ? 'google_neural_tts' : isSarvamVoice ? 'bulbul:v3' : modelId;
 
-    // Check character credit quota
-    const hasQuota = await usageService.hasAvailableQuota(trimmedText.length);
-    if (!hasQuota) {
-      res.status(403).json({
-        success: false,
-        error: {
-          code: 'QUOTA_EXCEEDED',
-          message: 'Insufficient character credits remaining in your VOXIA plan.',
-        },
-      });
-      return;
+    // Check character credit quota for premium ElevenLabs voices
+    if (!isGoogleVoice && !isSarvamVoice) {
+      const hasQuota = await usageService.hasAvailableQuota(trimmedText.length);
+      if (!hasQuota) {
+        res.status(403).json({
+          success: false,
+          error: {
+            code: 'QUOTA_EXCEEDED',
+            message: 'Insufficient character credits remaining in your VOXIA plan.',
+          },
+        });
+        return;
+      }
     }
 
     // Resolve voice name
     const voice = await voiceService.getVoiceById(voiceId);
     const voiceName = voice?.name || 'Voice';
 
-    // Generate speech securely via ElevenLabs API
+    // Generate speech securely via ElevenLabs API, Sarvam AI, or Google Free Neural engine
     const result = await ttsService.generateSpeech({
       text: trimmedText,
       voiceId,
-      modelId,
+      modelId: effectiveModelId,
       voiceSettings: {
         stability: Number(stability),
         similarity_boost: Number(similarity),
@@ -62,8 +67,10 @@ export async function generateTTS(req: Request, res: Response, next: NextFunctio
     const downloadFileName = `voxia-tts-${today}.${ext}`;
     const genId = `gen_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-    // Track usage quota (without writing files to server disk)
-    await usageService.trackGeneration(trimmedText.length);
+    // Track usage quota for billable voices (Google free and Sarvam voices do not deduct ElevenLabs quota)
+    if (!isGoogleVoice && !isSarvamVoice) {
+      await usageService.trackGeneration(trimmedText.length);
+    }
 
     // Save generation metadata record to DB for session & history tracking
     const generationRecord: GenerationRecord = {
@@ -71,7 +78,7 @@ export async function generateTTS(req: Request, res: Response, next: NextFunctio
       text: trimmedText,
       voiceId,
       voiceName,
-      modelId,
+      modelId: effectiveModelId,
       audioUrl: `/api/audio/${downloadFileName}`,
       audioFileName: downloadFileName,
       format: result.format,
@@ -130,18 +137,23 @@ export async function streamTTS(req: Request, res: Response, next: NextFunction)
     } = req.body;
 
     const trimmedText = text.trim();
+    const isGoogleVoice = String(voiceId).startsWith('google-');
+    const isSarvamVoice = String(voiceId).startsWith('sarvam-');
+    const effectiveModelId = isGoogleVoice ? 'google_neural_tts' : isSarvamVoice ? 'bulbul:v3' : modelId;
 
-    // Check quota
-    const hasQuota = await usageService.hasAvailableQuota(trimmedText.length);
-    if (!hasQuota) {
-      res.status(403).json({
-        success: false,
-        error: {
-          code: 'QUOTA_EXCEEDED',
-          message: 'Insufficient character credits remaining in your VOXIA plan.',
-        },
-      });
-      return;
+    // Check quota for premium ElevenLabs voices
+    if (!isGoogleVoice && !isSarvamVoice) {
+      const hasQuota = await usageService.hasAvailableQuota(trimmedText.length);
+      if (!hasQuota) {
+        res.status(403).json({
+          success: false,
+          error: {
+            code: 'QUOTA_EXCEEDED',
+            message: 'Insufficient character credits remaining in your VOXIA plan.',
+          },
+        });
+        return;
+      }
     }
 
     const voice = await voiceService.getVoiceById(voiceId);
@@ -150,7 +162,7 @@ export async function streamTTS(req: Request, res: Response, next: NextFunction)
     const { stream, contentType } = await ttsService.streamSpeech({
       text: trimmedText,
       voiceId,
-      modelId,
+      modelId: effectiveModelId,
       voiceSettings: {
         stability: Number(stability),
         similarity_boost: Number(similarity),
@@ -176,7 +188,7 @@ export async function streamTTS(req: Request, res: Response, next: NextFunction)
     res.setHeader('X-Generation-Id', genId);
     res.setHeader('X-Voice-Name', encodeURIComponent(voiceName));
     res.setHeader('X-Voice-Id', voiceId);
-    res.setHeader('X-Model-Id', modelId);
+    res.setHeader('X-Model-Id', effectiveModelId);
     res.setHeader('X-Character-Count', String(trimmedText.length));
     res.setHeader('X-Word-Count', String(wordCount));
     res.setHeader('X-Duration-Seconds', String(estimatedDuration));
@@ -203,7 +215,9 @@ export async function streamTTS(req: Request, res: Response, next: NextFunction)
 
       // Track usage and record in database without writing files to disk
       try {
-        await usageService.trackGeneration(trimmedText.length);
+        if (!isGoogleVoice && !isSarvamVoice) {
+          await usageService.trackGeneration(trimmedText.length);
+        }
         const totalBuffer = Buffer.concat(collectedChunks);
 
         // Store in ephemeral memory cache for optional subsequent lookup
@@ -214,7 +228,7 @@ export async function streamTTS(req: Request, res: Response, next: NextFunction)
           text: trimmedText,
           voiceId,
           voiceName,
-          modelId,
+          modelId: effectiveModelId,
           audioUrl: `/api/audio/${downloadFileName}`,
           audioFileName: downloadFileName,
           format: ext,

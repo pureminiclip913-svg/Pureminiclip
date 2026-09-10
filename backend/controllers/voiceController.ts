@@ -1,5 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { voiceService } from '../services/voiceService.js';
+import { ttsService } from '../services/ttsService.js';
+
+// Ephemeral cache for generated preview audio samples
+const previewCache = new Map<string, Buffer>();
 
 export async function getVoices(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -86,6 +90,69 @@ export async function previewVoice(req: Request, res: Response, next: NextFuncti
       name: voice.name,
       previewUrl: voice.preview_url,
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getVoicePreviewAudio(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { voiceId } = req.params;
+    const voice = await voiceService.getVoiceById(voiceId);
+
+    if (!voice) {
+      res.status(404).send('Voice not found');
+      return;
+    }
+
+    // If already cached in memory
+    const cached = previewCache.get(voiceId);
+    if (cached) {
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Content-Length', cached.length);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(cached);
+      return;
+    }
+
+    // If Google free voice, synthesize official sample in that voice's accent
+    if (voice.provider === 'google' || voice.voice_id.startsWith('google-')) {
+      const sampleText = voice.sampleText || `Hello, this is ${voice.name}, ready for your voice productions.`;
+      const lang = voice.languageCode || voice.labels?.language_code || 'en-US';
+      const buffer = await ttsService.fetchTTSChunk(sampleText, lang);
+      previewCache.set(voiceId, buffer);
+
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Content-Length', buffer.length);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(buffer);
+      return;
+    }
+
+    // If Sarvam AI voice, synthesize Hindi preview sample via Sarvam API (or high-fidelity fallback)
+    if (voice.provider === 'sarvam' || voice.voice_id.startsWith('sarvam-')) {
+      const sampleText = voice.sampleText || `नमस्कार, यह सर्वम एआई की ${voice.name} आवाज़ है।`;
+      const result = await ttsService.synthesizeWithSarvamAI({
+        text: sampleText,
+        voiceId,
+        outputFormat: 'mp3_44100_128',
+      });
+      previewCache.set(voiceId, result.audioBuffer);
+
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Content-Length', result.audioBuffer.length);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(result.audioBuffer);
+      return;
+    }
+
+    // If ElevenLabs preview URL is present and remote
+    if (voice.preview_url && voice.preview_url.startsWith('http')) {
+      res.redirect(voice.preview_url);
+      return;
+    }
+
+    res.status(404).send('Preview audio not available');
   } catch (err) {
     next(err);
   }
