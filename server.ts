@@ -12,10 +12,13 @@ import projectsRouter from './backend/routes/projects.js';
 import usageRouter from './backend/routes/usage.js';
 
 import { storageService } from './backend/services/storageService.js';
+import { ttsService } from './backend/services/ttsService.js';
 import { rateLimiter } from './backend/middleware/rateLimit.js';
 import { errorHandler } from './backend/middleware/errorHandler.js';
+import { EnvLoader } from './backend/utils/envLoader.js';
 
 dotenv.config();
+EnvLoader.refreshEnv();
 
 const app = express();
 const PORT = 3000;
@@ -37,30 +40,30 @@ const defaultAllowedOrigins = [
 
 const allAllowedOrigins = Array.from(new Set([...configuredOrigins, ...defaultAllowedOrigins]));
 
+// CORS configuration
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server, same-origin)
-      if (!origin) return callback(null, true);
-
-      const normalizedOrigin = origin.replace(/\/$/, '');
-      const isAllowed =
-        allAllowedOrigins.includes(normalizedOrigin) ||
-        allAllowedOrigins.some((allowed) => normalizedOrigin.startsWith(allowed)) ||
-        normalizedOrigin.endsWith('.run.app');
-
-      if (isAllowed) {
-        return callback(null, true);
-      }
-
-      // In development mode, dynamically permit localhost dev servers on any port
-      if (process.env.NODE_ENV !== 'production' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(null, true);
+      // Allow requests from all origins (including null/sandboxed iframes, localhost, and *.run.app)
+      callback(null, true);
     },
-    credentials: true,
+    credentials: false, // The app does not use cookies; disabling avoids browser CORS rejection when origin is null
+    exposedHeaders: [
+      'Content-Type',
+      'Content-Disposition',
+      'X-Voxia-Streaming',
+      'X-Generation-Id',
+      'X-Voice-Name',
+      'X-Voice-Id',
+      'X-Model-Id',
+      'X-Character-Count',
+      'X-Word-Count',
+      'X-Duration-Seconds',
+      'X-Audio-Format',
+      'X-Download-Filename',
+      'X-Voice-Fallback',
+      'X-Voice-Fallback-Reason',
+    ],
   })
 );
 
@@ -176,13 +179,17 @@ app.post('/api/settings/test-key', async (req: Request, res: Response) => {
 
 // 4. Sarvam AI key validation/test endpoint
 app.post('/api/settings/test-sarvam-key', async (req: Request, res: Response) => {
-  const { apiKey } = req.body || {};
-  const keyToTest = apiKey || process.env.SARVAM_API_KEY;
+  EnvLoader.refreshEnv();
+  const { apiKey, save } = req.body || {};
+  const keyToTest = (apiKey && typeof apiKey === 'string' && apiKey.trim().length > 0)
+    ? apiKey.trim()
+    : process.env.SARVAM_API_KEY;
 
   if (!keyToTest || keyToTest.trim().length === 0) {
-    res.status(400).json({
+    res.status(200).json({
       success: false,
-      message: 'No Sarvam AI API key provided to test.',
+      valid: false,
+      message: 'No Sarvam AI API key configured in server environment.',
     });
     return;
   }
@@ -203,6 +210,9 @@ app.post('/api/settings/test-sarvam-key', async (req: Request, res: Response) =>
     });
 
     if (checkRes.ok) {
+      if (save) {
+        EnvLoader.saveKey('SARVAM_API_KEY', keyToTest.trim());
+      }
       res.status(200).json({
         success: true,
         valid: true,
@@ -210,20 +220,107 @@ app.post('/api/settings/test-sarvam-key', async (req: Request, res: Response) =>
         provider: 'Sarvam AI',
         status: 'active',
         supportedLanguages: ['hi-IN', 'bn-IN', 'ta-IN', 'te-IN', 'mr-IN', 'gu-IN', 'kn-IN', 'ml-IN', 'pa-IN', 'od-IN'],
+        message: 'Sarvam AI connected! Original Bulbul v3 model voices are active.',
       });
     } else {
       const errorText = await checkRes.text();
-      res.status(checkRes.status).json({
+      let isQuotaExceeded = false;
+      let friendlyMessage = 'Invalid API key or unauthorized by Sarvam AI.';
+      try {
+        const parsed = JSON.parse(errorText);
+        if (parsed?.error?.code === 'insufficient_quota_error' || checkRes.status === 402) {
+          isQuotaExceeded = true;
+          friendlyMessage = 'Sarvam AI account has 0 credits remaining (quota exhausted). Please recharge credits at sarvam.ai.';
+        } else if (parsed?.error?.message) {
+          friendlyMessage = parsed.error.message;
+        }
+      } catch {
+        if (errorText) friendlyMessage = errorText.slice(0, 120);
+      }
+
+      if (save) {
+        EnvLoader.saveKey('SARVAM_API_KEY', keyToTest.trim());
+      }
+
+      res.status(200).json({
         success: false,
         valid: false,
-        message: errorText ? `Sarvam AI: ${errorText.slice(0, 100)}` : 'Invalid API key or unauthorized by Sarvam AI.',
+        quotaExceeded: isQuotaExceeded,
+        status: checkRes.status,
+        message: friendlyMessage,
       });
     }
   } catch (err: any) {
-    res.status(500).json({
+    res.status(200).json({
       success: false,
       valid: false,
       message: err?.message || 'Failed to connect to Sarvam AI API.',
+    });
+  }
+});
+
+// 5. Save Sarvam AI key endpoint
+app.post('/api/settings/save-sarvam-key', async (req: Request, res: Response) => {
+  const { apiKey } = req.body || {};
+  if (!apiKey || typeof apiKey !== 'string' || apiKey.trim().length === 0) {
+    res.status(400).json({ success: false, message: 'A non-empty Sarvam API key is required.' });
+    return;
+  }
+  const cleanKey = apiKey.trim();
+
+  try {
+    const checkRes = await fetch('https://api.sarvam.ai/text-to-speech', {
+      method: 'POST',
+      headers: {
+        'api-subscription-key': cleanKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: 'नमस्ते',
+        language_code: 'hi-IN',
+        model: 'bulbul:v3',
+        speaker: 'shubh',
+      }),
+    });
+
+    if (checkRes.ok) {
+      EnvLoader.saveKey('SARVAM_API_KEY', cleanKey);
+      res.status(200).json({
+        success: true,
+        valid: true,
+        quotaExceeded: false,
+        message: 'New Sarvam AI key saved and verified! Original Bulbul v3 voices are active.',
+      });
+      return;
+    }
+
+    const errorText = await checkRes.text();
+    let isQuota = checkRes.status === 402;
+    let msg = errorText;
+    try {
+      const parsed = JSON.parse(errorText);
+      msg = parsed?.error?.message || parsed?.message || errorText;
+      if (parsed?.error?.code === 'insufficient_quota_error' || isQuota) {
+        isQuota = true;
+      }
+    } catch {}
+
+    EnvLoader.saveKey('SARVAM_API_KEY', cleanKey);
+
+    res.status(200).json({
+      success: true,
+      valid: false,
+      quotaExceeded: isQuota,
+      message: isQuota
+        ? 'Key saved, but Sarvam reports 0 credits remaining. Please recharge your Sarvam credits.'
+        : `Key saved with Sarvam status (${checkRes.status}): ${msg}`,
+    });
+  } catch (err: any) {
+    EnvLoader.saveKey('SARVAM_API_KEY', cleanKey);
+    res.status(200).json({
+      success: true,
+      valid: false,
+      message: `Key saved, but could not verify with Sarvam AI: ${err.message}`,
     });
   }
 });

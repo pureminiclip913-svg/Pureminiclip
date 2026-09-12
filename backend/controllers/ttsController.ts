@@ -6,6 +6,16 @@ import { voiceService } from '../services/voiceService.js';
 import { usageService } from '../services/usageService.js';
 import { GenerationRecord } from '../types.js';
 
+/**
+ * Generate TTS audio.
+ *
+ * Provider selection is authoritative:
+ * - google-*  -> Google
+ * - sarvam-*  -> Sarvam AI Bulbul v3
+ * - everything else -> ElevenLabs
+ *
+ * There is NO automatic provider/voice fallback.
+ */
 export async function generateTTS(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const {
@@ -20,14 +30,48 @@ export async function generateTTS(req: Request, res: Response, next: NextFunctio
       projectId,
     } = req.body;
 
-    const trimmedText = text.trim();
-    const isGoogleVoice = String(voiceId).startsWith('google-');
-    const isSarvamVoice = String(voiceId).startsWith('sarvam-');
-    const effectiveModelId = isGoogleVoice ? 'google_neural_tts' : isSarvamVoice ? 'bulbul:v3' : modelId;
+    if (typeof text !== 'string' || !text.trim()) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_TEXT',
+          message: 'Text is required.',
+        },
+      });
+      return;
+    }
 
-    // Check character credit quota for premium ElevenLabs voices
+    if (typeof voiceId !== 'string' || !voiceId.trim()) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_VOICE',
+          message: 'voiceId is required.',
+        },
+      });
+      return;
+    }
+
+    const trimmedText = text.trim();
+    const normalizedVoiceId = voiceId.trim();
+
+    const isGoogleVoice = normalizedVoiceId.startsWith('google-');
+    const isSarvamVoice = normalizedVoiceId.startsWith('sarvam-');
+
+    // Provider-specific models are intentionally fixed because these providers
+    // require their own model identifiers. ElevenLabs receives the exact
+    // modelId selected by the client.
+    const effectiveModelId = isGoogleVoice
+      ? 'google_neural_tts'
+      : isSarvamVoice
+        ? 'bulbul:v3'
+        : modelId;
+
+    // VOXIA character quota applies only to ElevenLabs generations.
+    // Google and Sarvam are not charged against ElevenLabs credits.
     if (!isGoogleVoice && !isSarvamVoice) {
       const hasQuota = await usageService.hasAvailableQuota(trimmedText.length);
+
       if (!hasQuota) {
         res.status(403).json({
           success: false,
@@ -40,43 +84,52 @@ export async function generateTTS(req: Request, res: Response, next: NextFunctio
       }
     }
 
-    // Resolve voice name
-    const voice = await voiceService.getVoiceById(voiceId);
+    const voice = await voiceService.getVoiceById(normalizedVoiceId);
     const voiceName = voice?.name || 'Voice';
 
-    // Generate speech securely via ElevenLabs API, Sarvam AI, or Google Free Neural engine
+    const voiceSettings = {
+      stability: Number(stability),
+      similarity_boost: Number(similarity),
+      style: Number(style),
+      use_speaker_boost: true,
+      speed: Number(speed),
+    };
+
+    // IMPORTANT:
+    // ttsService is responsible for calling ONLY the provider represented by
+    // normalizedVoiceId. If that provider fails, the error is propagated.
     const result = await ttsService.generateSpeech({
       text: trimmedText,
-      voiceId,
+      voiceId: normalizedVoiceId,
       modelId: effectiveModelId,
-      voiceSettings: {
-        stability: Number(stability),
-        similarity_boost: Number(similarity),
-        style: Number(style),
-        use_speaker_boost: true,
-        speed: Number(speed),
-      },
+      voiceSettings,
       outputFormat,
     });
 
-    // Compute metrics and browser download filename
     const wordCount = trimmedText.split(/\s+/).filter(Boolean).length;
     const estimatedDuration = Math.max(1, Math.round((wordCount / 140) * 60));
     const today = new Date().toISOString().split('T')[0];
-    const ext = result.format.startsWith('wav') ? 'wav' : result.format.startsWith('pcm') ? 'raw' : 'mp3';
+
+    const ext = result.format.startsWith('wav')
+      ? 'wav'
+      : result.format.startsWith('pcm')
+        ? 'raw'
+        : 'mp3';
+
     const downloadFileName = `voxia-tts-${today}.${ext}`;
     const genId = `gen_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-    // Track usage quota for billable voices (Google free and Sarvam voices do not deduct ElevenLabs quota)
+    // Track ElevenLabs usage only.
     if (!isGoogleVoice && !isSarvamVoice) {
       await usageService.trackGeneration(trimmedText.length);
     }
 
-    // Save generation metadata record to DB for session & history tracking
+    // Save generation metadata.
+    // No fallback metadata is written because provider fallback is disabled.
     const generationRecord: GenerationRecord = {
       id: genId,
       text: trimmedText,
-      voiceId,
+      voiceId: normalizedVoiceId,
       voiceName,
       modelId: effectiveModelId,
       audioUrl: `/api/audio/${downloadFileName}`,
@@ -87,41 +140,50 @@ export async function generateTTS(req: Request, res: Response, next: NextFunctio
       durationSeconds: estimatedDuration,
       createdAt: new Date().toISOString(),
       status: 'completed',
-      settings: {
-        stability: Number(stability),
-        similarity_boost: Number(similarity),
-        style: Number(style),
-        use_speaker_boost: true,
-        speed: Number(speed),
-      },
+      settings: voiceSettings,
       projectId: projectId || undefined,
     };
+
     await databaseService.createGeneration(generationRecord);
 
-    // Cache in RAM for ephemeral requests with zero disk storage footprint
-    storageService.cacheAudioInMemory(genId, result.audioBuffer, result.contentType, downloadFileName);
+    // Keep audio in memory for subsequent API access without writing it to disk.
+    storageService.cacheAudioInMemory(
+      genId,
+      result.audioBuffer,
+      result.contentType,
+      downloadFileName
+    );
 
-    // Return the audio directly to the frontend as binary audio response
-    res.writeHead(200, {
+    const headers: Record<string, string | number> = {
       'Content-Type': result.contentType,
       'Content-Length': result.audioBuffer.length,
       'Content-Disposition': `inline; filename="${downloadFileName}"`,
       'X-Generation-Id': genId,
       'X-Voice-Name': encodeURIComponent(voiceName),
-      'X-Voice-Id': voiceId,
-      'X-Model-Id': modelId,
+      'X-Voice-Id': normalizedVoiceId,
+      'X-Model-Id': effectiveModelId,
       'X-Character-Count': String(trimmedText.length),
       'X-Word-Count': String(wordCount),
       'X-Duration-Seconds': String(estimatedDuration),
       'X-Audio-Format': ext,
       'X-Download-Filename': downloadFileName,
-    });
+    };
+
+    res.writeHead(200, headers);
     res.end(result.audioBuffer);
   } catch (err) {
+    // Provider errors (including Sarvam quota/API errors) are passed to the
+    // application's error handler. Nothing is silently retried with another voice.
     next(err);
   }
 }
 
+/**
+ * Stream TTS audio.
+ *
+ * The selected provider/voice/model remains authoritative for every chunk.
+ * There is NO automatic fallback.
+ */
 export async function streamTTS(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const {
@@ -136,14 +198,44 @@ export async function streamTTS(req: Request, res: Response, next: NextFunction)
       projectId,
     } = req.body;
 
-    const trimmedText = text.trim();
-    const isGoogleVoice = String(voiceId).startsWith('google-');
-    const isSarvamVoice = String(voiceId).startsWith('sarvam-');
-    const effectiveModelId = isGoogleVoice ? 'google_neural_tts' : isSarvamVoice ? 'bulbul:v3' : modelId;
+    if (typeof text !== 'string' || !text.trim()) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_TEXT',
+          message: 'Text is required.',
+        },
+      });
+      return;
+    }
 
-    // Check quota for premium ElevenLabs voices
+    if (typeof voiceId !== 'string' || !voiceId.trim()) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_VOICE',
+          message: 'voiceId is required.',
+        },
+      });
+      return;
+    }
+
+    const trimmedText = text.trim();
+    const normalizedVoiceId = voiceId.trim();
+
+    const isGoogleVoice = normalizedVoiceId.startsWith('google-');
+    const isSarvamVoice = normalizedVoiceId.startsWith('sarvam-');
+
+    const effectiveModelId = isGoogleVoice
+      ? 'google_neural_tts'
+      : isSarvamVoice
+        ? 'bulbul:v3'
+        : modelId;
+
+    // Check VOXIA character quota only for ElevenLabs.
     if (!isGoogleVoice && !isSarvamVoice) {
       const hasQuota = await usageService.hasAvailableQuota(trimmedText.length);
+
       if (!hasQuota) {
         res.status(403).json({
           success: false,
@@ -156,38 +248,53 @@ export async function streamTTS(req: Request, res: Response, next: NextFunction)
       }
     }
 
-    const voice = await voiceService.getVoiceById(voiceId);
+    const voice = await voiceService.getVoiceById(normalizedVoiceId);
     const voiceName = voice?.name || 'Voice';
 
-    const { stream, contentType } = await ttsService.streamSpeech({
+    const voiceSettings = {
+      stability: Number(stability),
+      similarity_boost: Number(similarity),
+      style: Number(style),
+      use_speaker_boost: true,
+      speed: Number(speed),
+    };
+
+    const streamResult = await ttsService.streamSpeech({
       text: trimmedText,
-      voiceId,
+      voiceId: normalizedVoiceId,
       modelId: effectiveModelId,
-      voiceSettings: {
-        stability: Number(stability),
-        similarity_boost: Number(similarity),
-        style: Number(style),
-        use_speaker_boost: true,
-        speed: Number(speed),
-      },
+      voiceSettings,
       outputFormat,
     });
 
+    const { stream, contentType } = streamResult;
+
+    const reader = stream.getReader();
+
+    // Pre-read one chunk so provider initialization/API failures can be caught
+    // before HTTP streaming headers are committed.
+    const first = await reader.read();
+
     const today = new Date().toISOString().split('T')[0];
-    const ext = outputFormat.startsWith('wav') ? 'wav' : outputFormat.startsWith('pcm') ? 'raw' : 'mp3';
+
+    const ext = outputFormat.startsWith('wav')
+      ? 'wav'
+      : outputFormat.startsWith('pcm')
+        ? 'raw'
+        : 'mp3';
+
     const downloadFileName = `voxia-tts-${today}.${ext}`;
     const wordCount = trimmedText.split(/\s+/).filter(Boolean).length;
     const estimatedDuration = Math.max(1, Math.round((wordCount / 140) * 60));
     const genId = `gen_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-    // Set streaming headers
     res.setHeader('Content-Type', contentType);
     res.setHeader('Transfer-Encoding', 'chunked');
     res.setHeader('Content-Disposition', `inline; filename="${downloadFileName}"`);
     res.setHeader('X-Voxia-Streaming', 'true');
     res.setHeader('X-Generation-Id', genId);
     res.setHeader('X-Voice-Name', encodeURIComponent(voiceName));
-    res.setHeader('X-Voice-Id', voiceId);
+    res.setHeader('X-Voice-Id', normalizedVoiceId);
     res.setHeader('X-Model-Id', effectiveModelId);
     res.setHeader('X-Character-Count', String(trimmedText.length));
     res.setHeader('X-Word-Count', String(wordCount));
@@ -195,17 +302,28 @@ export async function streamTTS(req: Request, res: Response, next: NextFunction)
     res.setHeader('X-Audio-Format', ext);
     res.setHeader('X-Download-Filename', downloadFileName);
 
-    const reader = stream.getReader();
     const collectedChunks: Buffer[] = [];
 
-    // Read and pipe chunks directly to response
+    if (first.value) {
+      const chunkBuf = Buffer.from(first.value);
+      collectedChunks.push(chunkBuf);
+      res.write(chunkBuf);
+    }
+
+    if (first.done) {
+      res.end();
+      return;
+    }
+
     const pump = async () => {
       while (true) {
         const { done, value } = await reader.read();
+
         if (done) {
           res.end();
           break;
         }
+
         if (value) {
           const chunkBuf = Buffer.from(value);
           collectedChunks.push(chunkBuf);
@@ -213,20 +331,26 @@ export async function streamTTS(req: Request, res: Response, next: NextFunction)
         }
       }
 
-      // Track usage and record in database without writing files to disk
+      // Post-stream accounting/storage should not interrupt an already
+      // completed audio response.
       try {
         if (!isGoogleVoice && !isSarvamVoice) {
           await usageService.trackGeneration(trimmedText.length);
         }
+
         const totalBuffer = Buffer.concat(collectedChunks);
 
-        // Store in ephemeral memory cache for optional subsequent lookup
-        storageService.cacheAudioInMemory(genId, totalBuffer, contentType, downloadFileName);
+        storageService.cacheAudioInMemory(
+          genId,
+          totalBuffer,
+          contentType,
+          downloadFileName
+        );
 
         const record: GenerationRecord = {
           id: genId,
           text: trimmedText,
-          voiceId,
+          voiceId: normalizedVoiceId,
           voiceName,
           modelId: effectiveModelId,
           audioUrl: `/api/audio/${downloadFileName}`,
@@ -237,13 +361,7 @@ export async function streamTTS(req: Request, res: Response, next: NextFunction)
           durationSeconds: estimatedDuration,
           createdAt: new Date().toISOString(),
           status: 'completed',
-          settings: {
-            stability: Number(stability),
-            similarity_boost: Number(similarity),
-            style: Number(style),
-            use_speaker_boost: true,
-            speed: Number(speed),
-          },
+          settings: voiceSettings,
           projectId: projectId || undefined,
         };
 
@@ -255,6 +373,7 @@ export async function streamTTS(req: Request, res: Response, next: NextFunction)
 
     pump().catch((err) => {
       console.error('Error during streaming chunk pipe:', err);
+
       if (!res.headersSent) {
         next(err);
       } else {

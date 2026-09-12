@@ -126,6 +126,8 @@ class ApiService {
     const today = new Date().toISOString().split('T')[0];
     const downloadFilename = res.headers.get('x-download-filename') || `voxia-tts-${today}.${format}`;
     const id = res.headers.get('x-generation-id') || `gen_${Date.now()}`;
+    const isFallback = res.headers.get('x-voice-fallback') === 'true';
+    const fallbackReason = decodeURIComponent(res.headers.get('x-voice-fallback-reason') || '');
 
     return {
       id,
@@ -149,6 +151,8 @@ class ApiService {
         speed: options.speed ?? 1.0,
       },
       projectId: options.projectId,
+      isFallback,
+      fallbackReason,
     };
   }
 
@@ -156,7 +160,7 @@ class ApiService {
   public async streamTTS(
     options: TTSRequestOptions,
     onChunk: (chunk: Uint8Array, totalBytes: number) => void,
-    onComplete: (audioBlob: Blob, audioUrl: string) => void,
+    onComplete: (audioBlob: Blob, audioUrl: string, meta?: { isFallback?: boolean; fallbackReason?: string }) => void,
     onError: (err: Error) => void
   ): Promise<void> {
     try {
@@ -210,12 +214,23 @@ class ApiService {
       }
 
       const contentType = response.headers.get('content-type') || 'audio/mpeg';
+      const isFallback = response.headers.get('x-voice-fallback') === 'true';
+      const fallbackReason = decodeURIComponent(response.headers.get('x-voice-fallback-reason') || '');
       const audioBlob = new Blob(chunks, { type: contentType });
       const audioUrl = URL.createObjectURL(audioBlob);
 
-      onComplete(audioBlob, audioUrl);
+      onComplete(audioBlob, audioUrl, { isFallback, fallbackReason });
     } catch (err: any) {
-      onError(err);
+      let friendlyError = err instanceof Error ? err : new Error(String(err));
+      if (
+        friendlyError.name === 'TypeError' &&
+        friendlyError.message?.toLowerCase().includes('failed to fetch')
+      ) {
+        friendlyError = new Error(
+          'Streaming connection was interrupted. Please switch off Real-Time Streaming or verify your network.'
+        );
+      }
+      onError(friendlyError);
     }
   }
 
@@ -320,8 +335,18 @@ class ApiService {
   }
 
   // Test Sarvam AI API key
-  public async testSarvamApiKey(apiKey?: string): Promise<{ valid: boolean; model?: string; provider?: string; message?: string }> {
+  public async testSarvamApiKey(apiKey?: string, save?: boolean): Promise<{ valid: boolean; model?: string; provider?: string; message?: string; quotaExceeded?: boolean; status?: number }> {
     const res = await fetch(`${this.baseUrl}/settings/test-sarvam-key`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey, save }),
+    });
+    return res.json();
+  }
+
+  // Save new Sarvam AI API key
+  public async saveSarvamApiKey(apiKey: string): Promise<{ success: boolean; valid: boolean; quotaExceeded?: boolean; message: string }> {
+    const res = await fetch(`${this.baseUrl}/settings/save-sarvam-key`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ apiKey }),

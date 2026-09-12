@@ -94,11 +94,19 @@ export const Studio: React.FC<StudioProps> = ({
     if (useStreaming) {
       // Real-time chunked streaming
       setGenerationStatus('streaming');
-      addToast({
-        type: 'info',
-        title: 'Streaming Synthesis',
-        message: 'Receiving real-time audio chunks from the voice model...',
-      });
+      if (trimmed.length > 2000) {
+        addToast({
+          type: 'info',
+          title: 'Streaming Long Script',
+          message: `Generating ${trimmed.length} characters in seamless chunks using voice "${selectedVoice?.name || 'Selected Voice'}".`,
+        });
+      } else {
+        addToast({
+          type: 'info',
+          title: 'Streaming Synthesis',
+          message: `Receiving real-time audio chunks for "${selectedVoice?.name || 'Selected Voice'}"...`,
+        });
+      }
 
       await api.streamTTS(
         {
@@ -115,7 +123,7 @@ export const Studio: React.FC<StudioProps> = ({
         (chunk, totalBytes) => {
           // Streaming progress callback
         },
-        (audioBlob, audioUrl) => {
+        (audioBlob, audioUrl, meta) => {
           setActiveAudioUrl(audioUrl);
           setGenerationStatus('ready');
 
@@ -137,6 +145,8 @@ export const Studio: React.FC<StudioProps> = ({
             status: 'completed',
             settings,
             projectId: activeProject?.id,
+            isFallback: meta?.isFallback,
+            fallbackReason: meta?.fallbackReason,
           };
 
           setLastGeneration(newGen);
@@ -145,7 +155,7 @@ export const Studio: React.FC<StudioProps> = ({
           addToast({
             type: 'success',
             title: 'Stream Ready',
-            message: `Stream completed (${trimmed.length} characters synthesized).`,
+            message: `Stream completed (${trimmed.length} characters synthesized using ${selectedVoice?.name}).`,
           });
         },
         (err) => {
@@ -154,13 +164,21 @@ export const Studio: React.FC<StudioProps> = ({
           addToast({
             type: 'error',
             title: 'Streaming Synthesis Failed',
-            message: err.message || 'Check your ElevenLabs API credentials or network connection.',
+            message: err.message || `Failed to stream speech with voice "${selectedVoice?.name || selectedVoiceId}".`,
           });
         }
       );
     } else {
       // Standard buffered generation
       setGenerationStatus('generating');
+      if (trimmed.length > 2000) {
+        addToast({
+          type: 'info',
+          title: 'Processing Long Script',
+          message: `Script exceeds 2,000 characters (${trimmed.length} chars). Processing all chunks with voice "${selectedVoice?.name || 'Selected Voice'}"...`,
+        });
+      }
+
       try {
         const gen = await api.generateTTS({
           text: trimmed,
@@ -179,17 +197,25 @@ export const Studio: React.FC<StudioProps> = ({
         setGenerationStatus('ready');
         onGenerationComplete(gen);
 
-        addToast({
-          type: 'success',
-          title: 'Audio Generated',
-          message: `Voice "${gen.voiceName}" synthesized successfully (${gen.characterCount} characters).`,
-        });
+        if (gen.isFallback) {
+          addToast({
+            type: 'info',
+            title: 'Synthesized with VOXIA Hindi Engine',
+            message: `Voice "${gen.voiceName}" synthesized via VOXIA Hindi neural engine (${gen.characterCount} chars). Sarvam AI account currently has 0 credits.`,
+          });
+        } else {
+          addToast({
+            type: 'success',
+            title: 'Audio Generated',
+            message: `Voice "${gen.voiceName}" synthesized successfully (${gen.characterCount} characters).`,
+          });
+        }
       } catch (err: any) {
         setGenerationStatus('error');
         addToast({
           type: 'error',
           title: 'Generation Failed',
-          message: err.message || 'Failed to synthesize speech with ElevenLabs API.',
+          message: err.message || `Failed to synthesize speech with selected voice "${selectedVoice?.name || selectedVoiceId}".`,
         });
       }
     }

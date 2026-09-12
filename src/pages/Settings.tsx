@@ -9,6 +9,10 @@ import {
   Volume2,
   Save,
   Radio,
+  Key,
+  Eye,
+  EyeOff,
+  Sparkles,
 } from 'lucide-react';
 import { Voice, ToastNotification } from '../types';
 import { AVAILABLE_MODELS, AVAILABLE_FORMATS } from '../components/SettingsPanel';
@@ -37,6 +41,9 @@ export const Settings: React.FC<SettingsProps> = ({
   const [isCheckingSarvam, setIsCheckingSarvam] = useState(false);
   const [sarvamStatus, setSarvamStatus] = useState<'unknown' | 'connected' | 'error'>('unknown');
   const [sarvamMessage, setSarvamMessage] = useState<string>('Not tested');
+  const [newSarvamKey, setNewSarvamKey] = useState('');
+  const [isSavingSarvam, setIsSavingSarvam] = useState(false);
+  const [showSarvamKey, setShowSarvamKey] = useState(false);
 
   const handleTestConnection = async () => {
     setIsCheckingConnection(true);
@@ -82,11 +89,19 @@ export const Settings: React.FC<SettingsProps> = ({
       const res = await api.testSarvamApiKey();
       if (res.valid) {
         setSarvamStatus('connected');
-        setSarvamMessage('Sarvam AI connected! Bulbul v3 Hindi voices active.');
+        setSarvamMessage('Sarvam AI connected! Original Bulbul v3 model voices are active.');
         addToast({
           type: 'success',
           title: 'Sarvam AI Verified',
-          message: 'Sarvam AI Bulbul v3 API key authenticated successfully.',
+          message: 'Original Bulbul v3 model voice is active and ready to synthesize.',
+        });
+      } else if (res.quotaExceeded) {
+        setSarvamStatus('error');
+        setSarvamMessage('Sarvam AI account has 0 credits. Please recharge your Sarvam credits or enter a new funded key.');
+        addToast({
+          type: 'warning',
+          title: '0 Credits Remaining',
+          message: 'Sarvam AI key has 0 credits. Enter a new key below to synthesize with original Sarvam model voices.',
         });
       } else {
         setSarvamStatus('error');
@@ -94,7 +109,7 @@ export const Settings: React.FC<SettingsProps> = ({
         addToast({
           type: 'warning',
           title: 'Sarvam AI Notice',
-          message: res.message || 'Add SARVAM_API_KEY to your .env file.',
+          message: res.message || 'Add a valid SARVAM_API_KEY below.',
         });
       }
     } catch (err: any) {
@@ -107,6 +122,62 @@ export const Settings: React.FC<SettingsProps> = ({
       });
     } finally {
       setIsCheckingSarvam(false);
+    }
+  };
+
+  const handleSaveSarvamKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSarvamKey.trim()) {
+      addToast({
+        type: 'warning',
+        title: 'Empty Key',
+        message: 'Please paste your Sarvam AI API subscription key before saving.',
+      });
+      return;
+    }
+
+    setIsSavingSarvam(true);
+    setSarvamStatus('unknown');
+    setSarvamMessage('Verifying and saving new Sarvam AI key...');
+
+    try {
+      const res = await api.saveSarvamApiKey(newSarvamKey.trim());
+      if (res.valid) {
+        setSarvamStatus('connected');
+        setSarvamMessage('New Sarvam AI key activated! Original Bulbul v3 voices active.');
+        addToast({
+          type: 'success',
+          title: 'Key Activated & Saved',
+          message: 'Original Sarvam Bulbul v3 model voice is active and verified.',
+        });
+        setNewSarvamKey('');
+      } else if (res.quotaExceeded) {
+        setSarvamStatus('error');
+        setSarvamMessage('Key saved, but Sarvam reports 0 credits remaining.');
+        addToast({
+          type: 'warning',
+          title: 'Key Saved (0 Credits)',
+          message: 'Saved successfully, but Sarvam returned 0 credits. Please recharge credits on your Sarvam account.',
+        });
+      } else {
+        setSarvamStatus('error');
+        setSarvamMessage(res.message);
+        addToast({
+          type: 'error',
+          title: 'Verification Notice',
+          message: res.message,
+        });
+      }
+    } catch (err: any) {
+      setSarvamStatus('error');
+      setSarvamMessage(err.message || 'Failed to save key.');
+      addToast({
+        type: 'error',
+        title: 'Save Failed',
+        message: err.message || 'Could not save Sarvam API key.',
+      });
+    } finally {
+      setIsSavingSarvam(false);
     }
   };
 
@@ -179,20 +250,24 @@ export const Settings: React.FC<SettingsProps> = ({
 
         {/* Sarvam AI Connection Card */}
         <div className="p-6 rounded-2xl bg-[#0c101a] border border-slate-800/90 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <h3 className="font-bold text-sm text-slate-100">Sarvam AI API Connectivity</h3>
                   <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-orange-500/10 border border-orange-500/20 text-orange-400">
                     Bulbul v3
                   </span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-1">
+                    <Sparkles className="w-2.5 h-2.5" />
+                    Priority: Original Model Voice First
+                  </span>
                 </div>
-                <p className="text-xs text-slate-400">
-                  Powers 12 expressive, natural Indian language & Hindi voices.
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Powers 12 expressive, natural Indian language & Hindi voices using original Sarvam Bulbul v3 model.
                 </p>
               </div>
             </div>
@@ -202,7 +277,7 @@ export const Settings: React.FC<SettingsProps> = ({
               type="button"
               onClick={handleTestSarvamConnection}
               disabled={isCheckingSarvam}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-200 hover:text-white hover:border-orange-500/40 transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-200 hover:text-white hover:border-orange-500/40 transition-all self-start sm:self-auto"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isCheckingSarvam ? 'animate-spin text-orange-400' : ''}`} />
               <span>Test Connection</span>
@@ -223,9 +298,47 @@ export const Settings: React.FC<SettingsProps> = ({
             </span>
           </div>
 
-          <p className="text-[11px] text-slate-400 leading-relaxed">
-            Note: Set <code className="text-orange-400 bg-slate-900 px-1 py-0.5 rounded">SARVAM_API_KEY</code> in your server environment or Settings menu. All requests route server-side with zero exposure to client browsers.
-          </p>
+          {/* Add / Update New Sarvam API Key Form */}
+          <form onSubmit={handleSaveSarvamKey} className="pt-2 border-t border-slate-800/80 space-y-3">
+            <label htmlFor="input-sarvam-key" className="block text-xs font-semibold text-slate-300">
+              Add / Update Sarvam AI API Key
+            </label>
+            <div className="flex flex-col sm:flex-row items-stretch gap-2">
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                  <Key className="w-4 h-4" />
+                </div>
+                <input
+                  id="input-sarvam-key"
+                  type={showSarvamKey ? 'text' : 'password'}
+                  value={newSarvamKey}
+                  onChange={(e) => setNewSarvamKey(e.target.value)}
+                  placeholder="Paste your new Sarvam API Key (e.g. sk_...)"
+                  className="w-full pl-9 pr-10 py-2.5 rounded-xl text-xs bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-orange-500/60 transition-all font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSarvamKey(!showSarvamKey)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                  title={showSarvamKey ? 'Hide key' : 'Show key'}
+                >
+                  {showSarvamKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <button
+                id="btn-save-sarvam-key"
+                type="submit"
+                disabled={isSavingSarvam || !newSarvamKey.trim()}
+                className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-orange-500 to-amber-600 text-white hover:from-orange-400 hover:to-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-orange-500/10"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>{isSavingSarvam ? 'Verifying & Saving...' : 'Save & Activate Key'}</span>
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Every Hindi & Indic voice synthesis and stream invokes the <strong className="text-slate-200">original Sarvam Bulbul v3 model voice</strong> directly using your authenticated Sarvam subscription key.
+            </p>
+          </form>
         </div>
 
         {/* Studio Defaults Form */}

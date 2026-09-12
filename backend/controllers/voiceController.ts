@@ -129,20 +129,29 @@ export async function getVoicePreviewAudio(req: Request, res: Response, next: Ne
       return;
     }
 
-    // If Sarvam AI voice, synthesize Hindi preview sample via Sarvam API (or high-fidelity fallback)
+    // If Sarvam AI voice, synthesize Hindi preview sample via Sarvam API
     if (voice.provider === 'sarvam' || voice.voice_id.startsWith('sarvam-')) {
       const sampleText = voice.sampleText || `नमस्कार, यह सर्वम एआई की ${voice.name} आवाज़ है।`;
-      const result = await ttsService.synthesizeWithSarvamAI({
-        text: sampleText,
-        voiceId,
-        outputFormat: 'mp3_44100_128',
-      });
-      previewCache.set(voiceId, result.audioBuffer);
-
-      res.setHeader('Content-Type', 'audio/mpeg');
-      res.setHeader('Content-Length', result.audioBuffer.length);
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-      res.send(result.audioBuffer);
+      try {
+        const result = await ttsService.synthesizeWithSarvamAI({
+          text: sampleText,
+          voiceId,
+          outputFormat: 'mp3_44100_128',
+        });
+        if (result.audioBuffer && result.audioBuffer.length > 0) {
+          previewCache.set(voiceId, result.audioBuffer);
+          res.setHeader('Content-Type', 'audio/mpeg');
+          res.setHeader('Content-Length', result.audioBuffer.length);
+          res.setHeader('Cache-Control', 'public, max-age=86400');
+          res.send(result.audioBuffer);
+          return;
+        }
+      } catch (err: any) {
+        console.warn(`[VoiceController] Sarvam preview failed for ${voiceId}:`, err);
+        res.status(502).send(err?.message || 'Sarvam voice preview failed.');
+        return;
+      }
+      res.status(503).send('Preview currently unavailable for this voice');
       return;
     }
 

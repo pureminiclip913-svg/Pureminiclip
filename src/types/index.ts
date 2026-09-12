@@ -67,6 +67,8 @@ export interface Generation {
   status: 'completed' | 'streaming' | 'failed';
   settings: VoiceSettings;
   projectId?: string;
+  isFallback?: boolean;
+  fallbackReason?: string;
 }
 
 export interface Project {
