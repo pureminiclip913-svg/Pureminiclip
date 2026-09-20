@@ -357,6 +357,13 @@ export class TTSService {
         } catch {
           // use raw error text
         }
+
+        if (response.status === 402 && parsedMessage.toLowerCase().includes('free users cannot use library voices')) {
+          parsedMessage = 'Free tier accounts cannot access this voice via the ElevenLabs API. Please choose a core voice (such as Adam, George, Charlie, Alice, or Bella) or upgrade your ElevenLabs plan.';
+        } else if (response.status === 401) {
+          parsedMessage = 'ElevenLabs API key is unauthorized or missing required permissions. Please verify your ELEVENLABS_API_KEY.';
+        }
+
         // Strict adherence to user intent: NEVER silently replace voice with a Google voice.
         throw new Error(
           `ElevenLabs voice generation failed (HTTP ${response.status}) on chunk ${i + 1}/${chunks.length} for voice "${voiceId}": ${parsedMessage}`
@@ -442,6 +449,13 @@ export class TTSService {
         } catch {
           // raw
         }
+
+        if (response.status === 402 && parsedMessage.toLowerCase().includes('free users cannot use library voices')) {
+          parsedMessage = 'Free tier accounts cannot access this voice via the ElevenLabs API. Please choose a core voice (such as Adam, George, Charlie, Alice, or Bella) or upgrade your ElevenLabs plan.';
+        } else if (response.status === 401) {
+          parsedMessage = 'ElevenLabs API key is unauthorized or missing required permissions. Please verify your ELEVENLABS_API_KEY.';
+        }
+
         throw new Error(`ElevenLabs stream failed (HTTP ${response.status}): ${parsedMessage}`);
       }
 

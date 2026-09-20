@@ -22,6 +22,7 @@ export class EnvLoader {
       path.resolve(cwd, '.env.local'),
       path.resolve(cwd, 'env', 'keys.env'),
       path.resolve(cwd, 'env', '.env'),
+      path.resolve(cwd, 'env', 'README.md'),
     ];
   }
 

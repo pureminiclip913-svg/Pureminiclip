@@ -6,6 +6,7 @@ import {
   Sparkles,
   RefreshCw,
   CheckCircle2,
+  Key,
 } from 'lucide-react';
 import { Voice, NavigationTab } from '../types';
 import { VoiceCard } from '../components/VoiceCard';
@@ -16,6 +17,8 @@ interface VoicesProps {
   onSelectVoiceAndStudio: (voiceId: string) => void;
   onRefreshVoices: () => void;
   isRefreshing?: boolean;
+  onOpenSarvamModal?: () => void;
+  onOpenElevenLabsModal?: () => void;
 }
 
 export const Voices: React.FC<VoicesProps> = ({
@@ -24,6 +27,8 @@ export const Voices: React.FC<VoicesProps> = ({
   onSelectVoiceAndStudio,
   onRefreshVoices,
   isRefreshing = false,
+  onOpenSarvamModal,
+  onOpenElevenLabsModal,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProvider, setSelectedProvider] = useState<'all' | 'google' | 'sarvam' | 'elevenlabs'>('all');
@@ -210,6 +215,72 @@ export const Voices: React.FC<VoicesProps> = ({
           </select>
         )}
       </div>
+
+      {/* Sarvam AI Key & Status Banner */}
+      {selectedProvider === 'sarvam' && (
+        <div className="p-4 rounded-2xl bg-[#0c101a] border border-orange-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg shadow-orange-950/20">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-slate-100">Sarvam AI Bulbul v3 Neural Voices</h4>
+                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Bulbul v3 Active
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                12 authentic native Indian voices across Hindi, Bengali, Tamil, Telugu, Marathi, Gujarati, Kannada, Malayalam, Punjabi, and Odia.
+              </p>
+            </div>
+          </div>
+          {onOpenSarvamModal && (
+            <button
+              id="btn-voices-add-sarvam-key"
+              type="button"
+              onClick={onOpenSarvamModal}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-orange-500/15 text-orange-300 hover:bg-orange-500/25 border border-orange-500/30 transition-all self-start sm:self-auto shrink-0 shadow-sm"
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>Add / Update Key</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ElevenLabs Key & Status Banner */}
+      {selectedProvider === 'elevenlabs' && (
+        <div className="p-4 rounded-2xl bg-[#0c101a] border border-cyan-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg shadow-cyan-950/20">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-slate-100">ElevenLabs Multilingual v2 & Indic Voices</h4>
+                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  Multilingual v2
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Official studio voices with support for 29+ languages including Hindi, Tamil, Telugu, and native Indic accents.
+              </p>
+            </div>
+          </div>
+          {onOpenElevenLabsModal && (
+            <button
+              id="btn-voices-add-elevenlabs-key"
+              type="button"
+              onClick={onOpenElevenLabsModal}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-cyan-500/15 text-cyan-300 hover:bg-cyan-500/25 border border-cyan-500/30 transition-all self-start sm:self-auto shrink-0 shadow-sm"
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>Add / Update Key</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Voice Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

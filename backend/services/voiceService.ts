@@ -1,222 +1,403 @@
 import { Voice } from '../types.js';
+import { EnvLoader } from '../utils/envLoader.js';
 
 // Curated official ElevenLabs voices with verified IDs, labels, descriptions and CDN preview URLs
 export const DEFAULT_VOICES: Voice[] = [
   {
-    voice_id: '21m00Tcm4TlvDq8ikWAM',
-    name: 'Rachel',
-    category: 'premade',
-    provider: 'elevenlabs',
-    isFree: false,
-    description: 'Calm, clear, and professional. Ideal for narration, audiobooks, and corporate explainer videos.',
-    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/21m00Tcm4TlvDq8ikWAM/df6788f9-5c96-470d-8312-aab3b3d8f50a.mp3',
-    labels: {
-      accent: 'American',
-      description: 'calm',
-      age: 'young',
-      gender: 'female',
-      use_case: 'narration',
-      provider: 'ElevenLabs',
-      free: 'Premium',
-    },
+    "voice_id": "21m00Tcm4TlvDq8ikWAM",
+    "name": "Rachel",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "Calm, clear, and professional. Ideal for narration, audiobooks, and corporate explainer videos.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/21m00Tcm4TlvDq8ikWAM/df6788f9-5c96-470d-8312-aab3b3d8f50a.mp3",
+    "labels": {
+      "accent": "American",
+      "description": "calm",
+      "age": "young",
+      "gender": "female",
+      "use_case": "narration",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
   },
   {
-    voice_id: 'pNInz6obpgDQGcFmaJgB',
-    name: 'Adam',
-    category: 'premade',
-    provider: 'elevenlabs',
-    isFree: false,
-    description: 'Deep, engaging, and authoritative. Superb for storytelling, podcasts, and video voiceovers.',
-    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/pNInz6obpgDQGcFmaJgB/6734d750-3fd5-4223-ab5e-b9b5962828b6.mp3',
-    labels: {
-      accent: 'American',
-      description: 'deep',
-      age: 'middle-aged',
-      gender: 'male',
-      use_case: 'narration',
-      provider: 'ElevenLabs',
-      free: 'Premium',
-    },
+    "voice_id": "CwhRBWXzGAHq8TQ4Fs17",
+    "name": "Roger",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "Easy going and perfect for casual conversations.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/CwhRBWXzGAHq8TQ4Fs17/58ee3ff5-f6f2-4628-93b8-e38eb31806b0.mp3",
+    "labels": {
+      "accent": "american",
+      "description": "classy",
+      "age": "middle_aged",
+      "gender": "male",
+      "use_case": "conversational",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
   },
   {
-    voice_id: 'ErXwobaYiN019PkySvjV',
-    name: 'Antoni',
-    category: 'premade',
-    provider: 'elevenlabs',
-    isFree: false,
-    description: 'Well-rounded, friendly, and naturally expressive. Great for educational content and documentaries.',
-    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/ErXwobaYiN019PkySvjV/38d8f8f0-0412-4217-9150-fb97f9e8a715.mp3',
-    labels: {
-      accent: 'American',
-      description: 'friendly',
-      age: 'young',
-      gender: 'male',
-      use_case: 'audiobook',
-      provider: 'ElevenLabs',
-      free: 'Premium',
-    },
+    "voice_id": "EXAVITQu4vr4xnSDxMaL",
+    "name": "Sarah",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "Young adult woman with a confident and warm, mature quality and a reassuring, professional tone.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/EXAVITQu4vr4xnSDxMaL/01a3e33c-6e99-4ee7-8543-ff2216a32186.mp3",
+    "labels": {
+      "accent": "american",
+      "description": "professional",
+      "age": "young",
+      "gender": "female",
+      "use_case": "entertainment_tv",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
   },
   {
-    voice_id: 'EXAVITQu4vr4xnSDxMaL',
-    name: 'Bella',
-    category: 'premade',
-    provider: 'elevenlabs',
-    isFree: false,
-    description: 'Bright, warm, and highly engaging. Perfect for commercial ads, tutorials, and assistant personas.',
-    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/EXAVITQu4vr4xnSDxMaL/0436570d-2098-422e-aab1-66c3c54c30c8.mp3',
-    labels: {
-      accent: 'American',
-      description: 'bright',
-      age: 'young',
-      gender: 'female',
-      use_case: 'advertising',
-      provider: 'ElevenLabs',
-      free: 'Premium',
-    },
+    "voice_id": "FGY2WhTYpPnrIDTdsKH5",
+    "name": "Laura",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "This young adult female voice delivers sunny enthusiasm with a quirky attitude.",
+    "preview_url": "https://api.us.elevenlabs.io/v1/voices/FGY2WhTYpPnrIDTdsKH5/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJwcmVtYWRlIiwiZmlsZW5hbWUiOiI2NzM0MTc1OS1hZDA4LTQxYTUtYmU2ZS1kZTEyZmU0NDg2MTgubXAzIiwidGltZXN0YW1wIjoxNzg5MjE0NDAwMDAwMDAwfQ%3D%3D",
+    "labels": {
+      "accent": "american",
+      "description": "sassy",
+      "age": "young",
+      "gender": "female",
+      "use_case": "social_media",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
   },
   {
-    voice_id: 'AZnzlk1XvdvUeBnXmlld',
-    name: 'Domi',
-    category: 'premade',
-    provider: 'elevenlabs',
-    isFree: false,
-    description: 'Strong, energetic, and distinct. Suited for animated projects, video games, and high-impact spots.',
-    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/AZnzlk1XvdvUeBnXmlld/50a2b53b-e192-4919-b684-25e1194200ff.mp3',
-    labels: {
-      accent: 'American',
-      description: 'strong',
-      age: 'young',
-      gender: 'female',
-      use_case: 'animation',
-      provider: 'ElevenLabs',
-      free: 'Premium',
-    },
+    "voice_id": "IKne3meq5aSn9XLyUdCD",
+    "name": "Charlie",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "A young Australian male with a confident and energetic voice.",
+    "preview_url": "https://api.us.elevenlabs.io/v1/voices/IKne3meq5aSn9XLyUdCD/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJwcmVtYWRlIiwiZmlsZW5hbWUiOiIxMDJkZTZmMi0yMmVkLTQzZTAtYTFmMS0xMTFmYTc1YzU0ODEubXAzIiwidGltZXN0YW1wIjoxNzg5MjE0NDAwMDAwMDAwfQ%3D%3D",
+    "labels": {
+      "accent": "australian",
+      "description": "hyped",
+      "age": "young",
+      "gender": "male",
+      "use_case": "conversational",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
   },
   {
-    voice_id: 'MF3mGyEYCl7XYWbV9V6O',
-    name: 'Elli',
-    category: 'premade',
-    provider: 'elevenlabs',
-    isFree: false,
-    description: 'Gentle, emotional, and articulate. Excellent for audio fiction, poetry, and reflective audio.',
-    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/MF3mGyEYCl7XYWbV9V6O/d8ec9278-8cf4-49c0-9f17-d42125bb7f6a.mp3',
-    labels: {
-      accent: 'American',
-      description: 'emotional',
-      age: 'young',
-      gender: 'female',
-      use_case: 'storytelling',
-      provider: 'ElevenLabs',
-      free: 'Premium',
-    },
+    "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+    "name": "George",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "Warm resonance that instantly captivates listeners.",
+    "preview_url": "https://api.us.elevenlabs.io/v1/voices/JBFqnCBsd6RMkjVDRZzb/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJwcmVtYWRlIiwiZmlsZW5hbWUiOiJlNjIwNmQxYS0wNzIxLTQ3ODctYWFmYi0wNmE2ZTcwNWNhYzUubXAzIiwidGltZXN0YW1wIjoxNzg5MjE0NDAwMDAwMDAwfQ%3D%3D",
+    "labels": {
+      "accent": "british",
+      "description": "mature",
+      "age": "middle_aged",
+      "gender": "male",
+      "use_case": "narrative_story",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
   },
   {
-    voice_id: 'TxGEqnHWrfWFTfGW9XjX',
-    name: 'Josh',
-    category: 'premade',
-    provider: 'elevenlabs',
-    isFree: false,
-    description: 'Deep, relaxed, and resonant. Great for lifestyle blogs, meditation guidance, and relaxed podcasts.',
-    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/TxGEqnHWrfWFTfGW9XjX/3e42106e-8260-498b-9650-60b64c058784.mp3',
-    labels: {
-      accent: 'American',
-      description: 'deep',
-      age: 'young',
-      gender: 'male',
-      use_case: 'narration',
-      provider: 'ElevenLabs',
-      free: 'Premium',
-    },
+    "voice_id": "N2lVS1w4EtoT3dr4eOWO",
+    "name": "Callum",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "Deceptively gravelly, yet unsettling edge.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/N2lVS1w4EtoT3dr4eOWO/ac833bd8-ffda-4938-9ebc-b0f99ca25481.mp3",
+    "labels": {
+      "accent": "american",
+      "description": "Husky Trickster",
+      "age": "middle_aged",
+      "gender": "male",
+      "use_case": "characters_animation",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
   },
   {
-    voice_id: 'yoZ06aMxZJJ28mfd3POQ',
-    name: 'Sam',
-    category: 'premade',
-    provider: 'elevenlabs',
-    isFree: false,
-    description: 'Dynamic, confident, and crisp. Suited for sports commentary, tech announcements, and news broadcasting.',
-    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/yoZ06aMxZJJ28mfd3POQ/9b0a1d63-547a-4712-92cf-4b711d9f82fa.mp3',
-    labels: {
-      accent: 'American',
-      description: 'crisp',
-      age: 'young',
-      gender: 'male',
-      use_case: 'news',
-      provider: 'ElevenLabs',
-      free: 'Premium',
-    },
+    "voice_id": "SAz9YHcvj6GT2YYXdXww",
+    "name": "River",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "A relaxed, neutral voice ready for narrations or conversational projects.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/SAz9YHcvj6GT2YYXdXww/e6c95f0b-2227-491a-b3d7-2249240decb7.mp3",
+    "labels": {
+      "accent": "american",
+      "description": "calm",
+      "age": "middle_aged",
+      "gender": "neutral",
+      "use_case": "conversational",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
   },
   {
-    voice_id: 'VR6AewLTigWG4xSOukaG',
-    name: 'Arnold',
-    category: 'premade',
-    provider: 'elevenlabs',
-    isFree: false,
-    description: 'Rich, seasoned, and commanding. Designed for documentaries, cinematic trailers, and dramatic readings.',
-    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/VR6AewLTigWG4xSOukaG/439fd292-628f-4a7b-a312-a16eef1e6e06.mp3',
-    labels: {
-      accent: 'American',
-      description: 'seasoned',
-      age: 'middle-aged',
-      gender: 'male',
-      use_case: 'documentary',
-      provider: 'ElevenLabs',
-      free: 'Premium',
-    },
+    "voice_id": "SOYHLrjzK2X1ezoPC6cr",
+    "name": "Harry",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "An animated warrior ready to charge forward.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/SOYHLrjzK2X1ezoPC6cr/86d178f6-f4b6-4e0e-85be-3de19f490794.mp3",
+    "labels": {
+      "accent": "american",
+      "description": "rough",
+      "age": "young",
+      "gender": "male",
+      "use_case": "characters_animation",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
   },
   {
-    voice_id: 'ThT5KcBeYPX3keUQqHPh',
-    name: 'Dorothy',
-    category: 'premade',
-    provider: 'elevenlabs',
-    isFree: false,
-    description: 'Pleasant, British accent with natural warmth. Ideal for classic literature, children stories, and travel guides.',
-    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/ThT5KcBeYPX3keUQqHPh/50a2b53b-e192-4919-b684-25e1194200ff.mp3',
-    labels: {
-      accent: 'British',
-      description: 'pleasant',
-      age: 'young',
-      gender: 'female',
-      use_case: 'audiobook',
-      provider: 'ElevenLabs',
-      free: 'Premium',
-    },
+    "voice_id": "TX3LPaxmHKxFdv7VOQHJ",
+    "name": "Liam",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "A young adult with energy and warmth - suitable for reels and shorts.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/TX3LPaxmHKxFdv7VOQHJ/63148076-6363-42db-aea8-31424308b92c.mp3",
+    "labels": {
+      "accent": "american",
+      "description": "confident",
+      "age": "young",
+      "gender": "male",
+      "use_case": "social_media",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
   },
   {
-    voice_id: 'JBFqnCBsd6RMkjVDRZzb',
-    name: 'George',
-    category: 'premade',
-    provider: 'elevenlabs',
-    isFree: false,
-    description: 'Warm, refined British gentleman. Suited for historical narratives, premium branding, and museum audio guides.',
-    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/JBFqnCBsd6RMkjVDRZzb/e6206d1a-072b-47bc-ab02-94c9d1633221.mp3',
-    labels: {
-      accent: 'British',
-      description: 'refined',
-      age: 'middle-aged',
-      gender: 'male',
-      use_case: 'narration',
-      provider: 'ElevenLabs',
-      free: 'Premium',
-    },
+    "voice_id": "Xb7hH8MSUJpSbSDYk0k2",
+    "name": "Alice",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "Clear and engaging, friendly woman with a British accent suitable for e-learning.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/Xb7hH8MSUJpSbSDYk0k2/d10f7534-11f6-41fe-a012-2de1e482d336.mp3",
+    "labels": {
+      "accent": "british",
+      "description": "professional",
+      "age": "middle_aged",
+      "gender": "female",
+      "use_case": "informative_educational",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
   },
   {
-    voice_id: 'XB0fDUnXU5powFXDhCwa',
-    name: 'Charlotte',
-    category: 'premade',
-    provider: 'elevenlabs',
-    isFree: false,
-    description: 'Sophisticated Swedish-European English accent. Distinctive character for games, intros, and international voice tracks.',
-    preview_url: 'https://storage.googleapis.com/eleven-public-prod/premade/voices/XB0fDUnXU5powFXDhCwa/942d9d79-22a4-4df1-807a-241c7a8f8d68.mp3',
-    labels: {
-      accent: 'Swedish/European',
-      description: 'seductive',
-      age: 'young',
-      gender: 'female',
-      use_case: 'characters',
-      provider: 'ElevenLabs',
-      free: 'Premium',
-    },
+    "voice_id": "XrExE9yKIg1WjnnlVkGX",
+    "name": "Matilda",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "A professional woman with a pleasing alto pitch. Suitable for many use cases.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/XrExE9yKIg1WjnnlVkGX/b930e18d-6b4d-466e-bab2-0ae97c6d8535.mp3",
+    "labels": {
+      "accent": "american",
+      "description": "upbeat",
+      "age": "middle_aged",
+      "gender": "female",
+      "use_case": "informative_educational",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
+  },
+  {
+    "voice_id": "bIHbv24MWmeRgasZH58o",
+    "name": "Will",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "Conversational and laid back.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/bIHbv24MWmeRgasZH58o/8caf8f3d-ad29-4980-af41-53f20c72d7a4.mp3",
+    "labels": {
+      "accent": "american",
+      "description": "chill",
+      "age": "young",
+      "gender": "male",
+      "use_case": "conversational",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
+  },
+  {
+    "voice_id": "cgSgspJ2msm6clMCkdW9",
+    "name": "Jessica",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "Young and popular, this playful American female voice is perfect for trendy content.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/cgSgspJ2msm6clMCkdW9/56a97bf8-b69b-448f-846c-c3a11683d45a.mp3",
+    "labels": {
+      "accent": "american",
+      "description": "cute",
+      "age": "young",
+      "gender": "female",
+      "use_case": "conversational",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
+  },
+  {
+    "voice_id": "cjVigY5qzO86Huf0OWal",
+    "name": "Eric",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "A smooth tenor pitch from a man in his 40s - perfect for agentic use cases.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/cjVigY5qzO86Huf0OWal/d098fda0-6456-4030-b3d8-63aa048c9070.mp3",
+    "labels": {
+      "accent": "american",
+      "description": "classy",
+      "age": "middle_aged",
+      "gender": "male",
+      "use_case": "conversational",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
+  },
+  {
+    "voice_id": "hpp4J3VqNfWAUOO0d1Us",
+    "name": "Bella",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "This voice is warm, bright, and professional, characterized by a Standard American accent and a polished, narrative quality. It features a medium-high pitch with crisp diction and a deliberate, rhythmic pace that makes it highly intelligible and engaging for long-form listening.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/hpp4J3VqNfWAUOO0d1Us/dab0f5ba-3aa4-48a8-9fad-f138fea1126d.mp3",
+    "labels": {
+      "accent": "american",
+      "description": "professional",
+      "age": "middle_aged",
+      "gender": "female",
+      "use_case": "informative_educational",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
+  },
+  {
+    "voice_id": "iP95p4xoKVk53GoZ742B",
+    "name": "Chris",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "Natural and real, this down-to-earth voice is great across many use-cases.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/iP95p4xoKVk53GoZ742B/3f4bde72-cc48-40dd-829f-57fbf906f4d7.mp3",
+    "labels": {
+      "accent": "american",
+      "description": "casual",
+      "age": "middle_aged",
+      "gender": "male",
+      "use_case": "conversational",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
+  },
+  {
+    "voice_id": "nPczCjzI2devNBz1zQrb",
+    "name": "Brian",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "Middle-aged man with a resonant and comforting tone. Great for narrations and advertisements.",
+    "preview_url": "https://api.us.elevenlabs.io/v1/voices/nPczCjzI2devNBz1zQrb/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJwcmVtYWRlIiwiZmlsZW5hbWUiOiIyZGQzZTcyYy00ZmQzLTQyZjEtOTNlYS1hYmM1ZDRlNWFhMWQubXAzIiwidGltZXN0YW1wIjoxNzg5MjE0NDAwMDAwMDAwfQ%3D%3D",
+    "labels": {
+      "accent": "american",
+      "description": "classy",
+      "age": "middle_aged",
+      "gender": "male",
+      "use_case": "social_media",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
+  },
+  {
+    "voice_id": "onwK4e9ZLuTAKqWW03F9",
+    "name": "Daniel",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "A strong voice perfect for delivering a professional broadcast or news story.",
+    "preview_url": "https://api.us.elevenlabs.io/v1/voices/onwK4e9ZLuTAKqWW03F9/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJwcmVtYWRlIiwiZmlsZW5hbWUiOiI3ZWVlMDIzNi0xYTcyLTRiODYtYjMwMy01ZGNhZGMwMDdiYTkubXAzIiwidGltZXN0YW1wIjoxNzg5MjE0NDAwMDAwMDAwfQ%3D%3D",
+    "labels": {
+      "accent": "british",
+      "description": "formal",
+      "age": "middle_aged",
+      "gender": "male",
+      "use_case": "informative_educational",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
+  },
+  {
+    "voice_id": "pFZP5JQG7iQjIQuC4Bku",
+    "name": "Lily",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "Velvety British female voice delivers news and narrations with warmth and clarity.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/pFZP5JQG7iQjIQuC4Bku/89b68b35-b3dd-4348-a84a-a3c13a3c2b30.mp3",
+    "labels": {
+      "accent": "british",
+      "description": "confident",
+      "age": "middle_aged",
+      "gender": "female",
+      "use_case": "informative_educational",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
+  },
+  {
+    "voice_id": "pNInz6obpgDQGcFmaJgB",
+    "name": "Adam",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "A bright tenor pitch that immediately cuts through. The delivery is brash and openly confident, speaking with unwavering certainty and a slightly aggressive self-assurance.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/pNInz6obpgDQGcFmaJgB/d6905d7a-dd26-4187-bfff-1bd3a5ea7cac.mp3",
+    "labels": {
+      "accent": "american",
+      "description": "Dominant, Firm",
+      "age": "middle_aged",
+      "gender": "male",
+      "use_case": "social_media",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
+  },
+  {
+    "voice_id": "pqHfZKP75CvOlQylNhV4",
+    "name": "Bill",
+    "category": "premade",
+    "provider": "elevenlabs",
+    "isFree": false,
+    "description": "Friendly and comforting voice ready to narrate your stories.",
+    "preview_url": "https://storage.googleapis.com/eleven-public-prod/premade/voices/pqHfZKP75CvOlQylNhV4/d782b3ff-84ba-4029-848c-acf01285524d.mp3",
+    "labels": {
+      "accent": "american",
+      "description": "crisp",
+      "age": "old",
+      "gender": "male",
+      "use_case": "advertisement",
+      "provider": "ElevenLabs",
+      "free": "Premium"
+    }
   }
 ];
 
@@ -704,30 +885,34 @@ class VoiceService {
   private readonly CACHE_TTL_MS = 1000 * 60 * 10; // 10 minutes
 
   public async getVoices(forceRefresh = false): Promise<{ voices: Voice[]; provider: string; hasApiKey: boolean }> {
+    EnvLoader.refreshEnv();
     const apiKey = process.env.ELEVENLABS_API_KEY;
-    const hasApiKey = Boolean(apiKey && apiKey.trim().length > 5);
+    const hasApiKey = Boolean(apiKey && apiKey.trim().length > 5 && apiKey !== 'MY_ELEVENLABS_API_KEY');
 
     let elevenLabsVoices: Voice[] = DEFAULT_VOICES;
     let providerSource = 'curated_catalog';
 
-    if (hasApiKey) {
-      const now = Date.now();
-      if (!forceRefresh && this.cache && now - this.lastFetchTime < this.CACHE_TTL_MS) {
-        elevenLabsVoices = this.cache;
-        providerSource = 'elevenlabs_api';
-      } else {
+    const now = Date.now();
+    if (!forceRefresh && this.cache && now - this.lastFetchTime < this.CACHE_TTL_MS) {
+      elevenLabsVoices = this.cache;
+      providerSource = hasApiKey ? 'elevenlabs_api' : 'curated_catalog';
+    } else {
+      let fetchedSuccessfully = false;
+
+      // 1. If key is present, first try authenticated fetch for custom library voices
+      if (hasApiKey) {
         try {
           const response = await fetch('https://api.elevenlabs.io/v1/voices', {
             headers: {
-              'xi-api-key': apiKey!,
+              'xi-api-key': apiKey!.trim(),
               'Accept': 'application/json',
             },
           });
 
           if (response.ok) {
-            const data = await response.json() as { voices: Voice[] };
+            const data = (await response.json()) as { voices: Voice[] };
             if (Array.isArray(data?.voices) && data.voices.length > 0) {
-              this.cache = data.voices.map(v => ({
+              this.cache = data.voices.map((v) => ({
                 ...v,
                 provider: 'elevenlabs',
                 isFree: false,
@@ -735,23 +920,77 @@ class VoiceService {
               this.lastFetchTime = now;
               elevenLabsVoices = this.cache;
               providerSource = 'elevenlabs_api';
-            } else {
-              providerSource = 'curated_catalog_fallback';
+              fetchedSuccessfully = true;
             }
           } else {
+            // Check if 401/403 is due to scoped key missing voices_read permission
             const errorText = await response.text();
-            console.warn(`ElevenLabs API returned ${response.status}: ${errorText.slice(0, 100)}. Falling back to default voices.`);
-            providerSource = 'curated_catalog_fallback';
+            let isMissingVoicesScope = false;
+            try {
+              const errJson = JSON.parse(errorText);
+              if (
+                errJson?.status === 'missing_permissions' ||
+                errJson?.detail?.status === 'missing_permissions' ||
+                errJson?.detail?.message?.includes('voices_read') ||
+                errorText.includes('voices_read')
+              ) {
+                isMissingVoicesScope = true;
+              }
+            } catch {
+              // ignore json parse error
+            }
+
+            if (isMissingVoicesScope) {
+              console.log(
+                '[VoiceService] ElevenLabs API key active (premade voice catalog active; API key has TTS permissions without voices_read scope).'
+              );
+            } else {
+              console.log(
+                `[VoiceService] Notice from ElevenLabs voices endpoint (HTTP ${response.status}). Using public premade voice catalog.`
+              );
+            }
           }
-        } catch (err) {
-          console.error('Network error fetching voices from ElevenLabs:', err);
-          providerSource = 'curated_catalog_fallback';
+        } catch {
+          console.log('[VoiceService] Network notice while querying ElevenLabs voices API. Using premade voice catalog.');
+        }
+      }
+
+      // 2. If custom voices were not fetched (or API key is restricted without voices_read),
+      // fetch the 21 official public ElevenLabs voices with verified active CDN preview URLs.
+      if (!fetchedSuccessfully) {
+        try {
+          const publicResponse = await fetch('https://api.elevenlabs.io/v1/voices');
+          if (publicResponse.ok) {
+            const pubData = (await publicResponse.json()) as { voices: Voice[] };
+            if (Array.isArray(pubData?.voices) && pubData.voices.length > 0) {
+              const publicVoices: Voice[] = pubData.voices.map((v) => ({
+                ...v,
+                provider: 'elevenlabs',
+                isFree: false,
+              }));
+
+              // Merge public voices with curated defaults (preserving any with distinct voice IDs)
+              const existingIds = new Set(publicVoices.map((v) => v.voice_id));
+              const merged = [
+                ...publicVoices,
+                ...DEFAULT_VOICES.filter((v) => !existingIds.has(v.voice_id)),
+              ];
+
+              this.cache = merged;
+              this.lastFetchTime = now;
+              elevenLabsVoices = merged;
+              providerSource = hasApiKey ? 'elevenlabs_api' : 'curated_catalog';
+              fetchedSuccessfully = true;
+            }
+          }
+        } catch {
+          // If offline/unreachable, gracefully fall back to DEFAULT_VOICES
         }
       }
     }
 
-    // Combine Google Free Voices, Sarvam AI Hindi Voices, and ElevenLabs voices into unified catalog
-    const allVoices: Voice[] = [...GOOGLE_FREE_VOICES, ...SARVAM_HINDI_VOICES, ...elevenLabsVoices];
+    // Combine ElevenLabs voices, Sarvam AI Hindi Voices, and Google Free Voices into unified catalog
+    const allVoices: Voice[] = [...elevenLabsVoices, ...SARVAM_HINDI_VOICES, ...GOOGLE_FREE_VOICES];
 
     return {
       voices: allVoices,
@@ -761,21 +1000,26 @@ class VoiceService {
   }
 
   public async getVoiceById(voiceId: string): Promise<Voice | null> {
-    // 1. Check Google free voices first
-    const googleVoice = GOOGLE_FREE_VOICES.find(v => v.voice_id === voiceId);
-    if (googleVoice) return googleVoice;
-
-    // 2. Check Sarvam AI Hindi voices
+    // 1. Check Sarvam AI Hindi voices
     const sarvamVoice = SARVAM_HINDI_VOICES.find(v => v.voice_id === voiceId);
     if (sarvamVoice) return sarvamVoice;
 
-    // 3. Check default curated voices
-    const defaultFound = DEFAULT_VOICES.find(v => v.voice_id === voiceId);
-    if (defaultFound) return defaultFound;
-
-    // 3. Match from active voices query (including fetched ElevenLabs voices)
+    // 2. Check ElevenLabs active voices query (including fetched ElevenLabs voices with fresh CDN URLs)
     const { voices } = await this.getVoices();
-    return voices.find(v => v.voice_id === voiceId) || null;
+    const activeVoice = voices.find(v => v.voice_id === voiceId);
+    if (activeVoice) return activeVoice;
+
+    // 3. Check Google free voices
+    const googleVoice = GOOGLE_FREE_VOICES.find(v => v.voice_id === voiceId);
+    if (googleVoice) return googleVoice;
+
+    // 4. Check default curated voices fallback
+    return DEFAULT_VOICES.find(v => v.voice_id === voiceId) || null;
+  }
+
+  public clearCache(): void {
+    this.cache = [];
+    this.lastFetchTime = 0;
   }
 }
 

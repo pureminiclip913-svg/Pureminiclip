@@ -9,6 +9,7 @@ import {
   Radio,
   Bookmark,
   Check,
+  Key,
 } from 'lucide-react';
 import {
   Voice,
@@ -32,6 +33,8 @@ interface StudioProps {
   onSaveProject: (text: string, voiceId: string, settings: VoiceSettings) => void;
   onGenerationComplete: (gen: Generation) => void;
   addToast: (toast: Omit<ToastNotification, 'id'>) => void;
+  onOpenSarvamModal?: () => void;
+  onOpenElevenLabsModal?: () => void;
 }
 
 const DEFAULT_SETTINGS: VoiceSettings = {
@@ -50,6 +53,8 @@ export const Studio: React.FC<StudioProps> = ({
   onSaveProject,
   onGenerationComplete,
   addToast,
+  onOpenSarvamModal,
+  onOpenElevenLabsModal,
 }) => {
   const [text, setText] = useState<string>(
     activeProject?.text ||
@@ -197,19 +202,14 @@ export const Studio: React.FC<StudioProps> = ({
         setGenerationStatus('ready');
         onGenerationComplete(gen);
 
-        if (gen.isFallback) {
-          addToast({
-            type: 'info',
-            title: 'Synthesized with VOXIA Hindi Engine',
-            message: `Voice "${gen.voiceName}" synthesized via VOXIA Hindi neural engine (${gen.characterCount} chars). Sarvam AI account currently has 0 credits.`,
-          });
-        } else {
-          addToast({
-            type: 'success',
-            title: 'Audio Generated',
-            message: `Voice "${gen.voiceName}" synthesized successfully (${gen.characterCount} characters).`,
-          });
-        }
+        const isSarvam = selectedVoiceId.startsWith('sarvam-');
+        addToast({
+          type: 'success',
+          title: 'Audio Generated',
+          message: isSarvam
+            ? `Voice "${gen.voiceName}" synthesized successfully with Sarvam Bulbul v3 (${gen.characterCount} chars).`
+            : `Voice "${gen.voiceName}" synthesized successfully (${gen.characterCount} characters).`,
+        });
       } catch (err: any) {
         setGenerationStatus('error');
         addToast({
@@ -250,12 +250,36 @@ export const Studio: React.FC<StudioProps> = ({
             )}
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Generate lifelike conversational audio and voiceovers powered by ElevenLabs neural models.
+            Generate lifelike conversational audio and voiceovers powered by ElevenLabs & Sarvam AI neural models.
           </p>
         </div>
 
         {/* Header Action Buttons */}
         <div className="flex items-center gap-2.5">
+          {onOpenElevenLabsModal && (
+            <button
+              id="btn-studio-elevenlabs-key"
+              type="button"
+              onClick={onOpenElevenLabsModal}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-500/50 transition-all"
+            >
+              <Key className="w-3.5 h-3.5 text-cyan-400" />
+              <span>ElevenLabs Key</span>
+            </button>
+          )}
+
+          {onOpenSarvamModal && (
+            <button
+              id="btn-studio-sarvam-key"
+              type="button"
+              onClick={onOpenSarvamModal}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-orange-500/10 border border-orange-500/30 text-orange-300 hover:bg-orange-500/20 hover:border-orange-500/50 transition-all"
+            >
+              <Key className="w-3.5 h-3.5 text-orange-400" />
+              <span>Sarvam Key</span>
+            </button>
+          )}
+
           <button
             id="btn-save-project"
             onClick={handleSaveCurrentProject}
@@ -287,6 +311,8 @@ export const Studio: React.FC<StudioProps> = ({
                 voices={voices}
                 selectedVoiceId={selectedVoiceId}
                 onSelectVoice={onSelectVoice}
+                onOpenSarvamModal={onOpenSarvamModal}
+                onOpenElevenLabsModal={onOpenElevenLabsModal}
               />
             </div>
 

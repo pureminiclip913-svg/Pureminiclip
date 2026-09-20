@@ -12,7 +12,7 @@ This directory provides a safe, git-ignored place to configure your private API 
   3. Navigate to **API Keys** and copy your subscription key.
   4. Paste it into `.env` or `env/keys.env`:
      ```env
-     SARVAM_API_KEY=sk_auu6evmk_r6fyjvwwetWwcbm5TGHGtfqp
+     SARVAM_API_KEY=sk_2ydimn65_Clx0MJFiscR1kGgA8KZlj9qo
      ```
 
 ### 2. ElevenLabs (`ELEVENLABS_API_KEY`)
@@ -22,7 +22,7 @@ This directory provides a safe, git-ignored place to configure your private API 
   2. Go to Profile / API Keys and copy your key.
   3. Paste it into `.env` or `env/keys.env`:
      ```env
-     ELEVENLABS_API_KEY=your_elevenlabs_key_here
+     ELEVENLABS_API_KEY=sk_b34b25218bba97044ec1628444607a4317259faaec5ff57a
      ```
 
 ## Security Guarantee

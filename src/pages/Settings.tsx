@@ -23,6 +23,8 @@ interface SettingsProps {
   defaultVoiceId: string;
   onSetDefaultVoiceId: (id: string) => void;
   addToast: (toast: Omit<ToastNotification, 'id'>) => void;
+  onOpenElevenLabsModal?: () => void;
+  onOpenSarvamModal?: () => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({
@@ -30,6 +32,8 @@ export const Settings: React.FC<SettingsProps> = ({
   defaultVoiceId,
   onSetDefaultVoiceId,
   addToast,
+  onOpenElevenLabsModal,
+  onOpenSarvamModal,
 }) => {
   const [selectedVoice, setSelectedVoice] = useState(defaultVoiceId);
   const [selectedModel, setSelectedModel] = useState('eleven_multilingual_v2');
@@ -37,6 +41,9 @@ export const Settings: React.FC<SettingsProps> = ({
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'connected' | 'error'>('unknown');
   const [statusMessage, setStatusMessage] = useState<string>('Not tested');
+  const [newElevenLabsKey, setNewElevenLabsKey] = useState('');
+  const [isSavingElevenLabs, setIsSavingElevenLabs] = useState(false);
+  const [showElevenLabsKey, setShowElevenLabsKey] = useState(false);
 
   const [isCheckingSarvam, setIsCheckingSarvam] = useState(false);
   const [sarvamStatus, setSarvamStatus] = useState<'unknown' | 'connected' | 'error'>('unknown');
@@ -48,24 +55,37 @@ export const Settings: React.FC<SettingsProps> = ({
   const handleTestConnection = async () => {
     setIsCheckingConnection(true);
     setConnectionStatus('unknown');
-    setStatusMessage('Checking ElevenLabs backend proxy...');
+    setStatusMessage('Checking ElevenLabs backend proxy & subscription...');
 
     try {
-      const res = await api.checkHealth();
-      if (res.status === 'ok') {
+      const res = await api.testApiKey();
+      if (res.valid) {
         setConnectionStatus('connected');
-        setStatusMessage(
-          res.elevenlabsConfigured
-            ? 'ElevenLabs API connected & authenticated successfully.'
-            : 'Backend operational (running with high-fidelity mock voice catalog).'
-        );
+        setStatusMessage(`Connected! Tier: ${res.tier || 'Active'}`);
         addToast({
           type: 'success',
-          title: 'Connection Successful',
-          message: res.elevenlabsConfigured
-            ? 'ElevenLabs API credentials verified.'
-            : 'Backend operational. Add ELEVENLABS_API_KEY in .env to use live ElevenLabs keys.',
+          title: 'ElevenLabs Connected',
+          message: `API key active. Tier: ${res.tier || 'Active'}.`,
         });
+      } else {
+        const health = await api.checkHealth();
+        if (health.elevenlabsConfigured) {
+          setConnectionStatus('connected');
+          setStatusMessage('ElevenLabs key active in environment.');
+          addToast({
+            type: 'success',
+            title: 'ElevenLabs Operational',
+            message: 'ElevenLabs API is ready.',
+          });
+        } else {
+          setConnectionStatus('error');
+          setStatusMessage(res.message || 'No valid ElevenLabs key detected.');
+          addToast({
+            type: 'error',
+            title: 'Key Validation Notice',
+            message: res.message || 'Add a valid ElevenLabs API key.',
+          });
+        }
       }
     } catch (err: any) {
       setConnectionStatus('error');
@@ -77,6 +97,51 @@ export const Settings: React.FC<SettingsProps> = ({
       });
     } finally {
       setIsCheckingConnection(false);
+    }
+  };
+
+  const handleSaveElevenLabsKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newElevenLabsKey.trim()) {
+      addToast({
+        type: 'error',
+        title: 'Invalid Key',
+        message: 'Please provide an ElevenLabs API key.',
+      });
+      return;
+    }
+
+    setIsSavingElevenLabs(true);
+    try {
+      const res = await api.saveElevenLabsApiKey(newElevenLabsKey.trim());
+      if (res.valid) {
+        setConnectionStatus('connected');
+        setStatusMessage(res.message || `ElevenLabs key verified! Tier: ${res.tier || 'Active'}.`);
+        setNewElevenLabsKey('');
+        addToast({
+          type: 'success',
+          title: 'ElevenLabs Key Saved',
+          message: `Key validated and active. Tier: ${res.tier || 'Active'}.`,
+        });
+      } else {
+        setConnectionStatus('error');
+        setStatusMessage(res.message || 'ElevenLabs API rejected this key.');
+        addToast({
+          type: 'error',
+          title: 'Validation Failed',
+          message: res.message || 'Check key and permissions.',
+        });
+      }
+    } catch (err: any) {
+      setConnectionStatus('error');
+      setStatusMessage(err.message || 'Failed to save key.');
+      addToast({
+        type: 'error',
+        title: 'Save Failed',
+        message: err.message || 'Could not reach server.',
+      });
+    } finally {
+      setIsSavingElevenLabs(false);
     }
   };
 
@@ -204,29 +269,47 @@ export const Settings: React.FC<SettingsProps> = ({
       <div className="max-w-3xl space-y-8">
         {/* ElevenLabs API Connection Card */}
         <div className="p-6 rounded-2xl bg-[#0c101a] border border-slate-800/90 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-slate-100">ElevenLabs API Connectivity</h3>
-                <p className="text-xs text-slate-400">
-                  Backend proxy handles API key authentication securely.
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-bold text-sm text-slate-100">ElevenLabs API Connectivity</h3>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                    Multilingual v2 & Flash
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Secure proxy authentication for official studio voices and 29+ languages including Indic scripts.
                 </p>
               </div>
             </div>
 
-            <button
-              id="btn-test-connection"
-              type="button"
-              onClick={handleTestConnection}
-              disabled={isCheckingConnection}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-200 hover:text-white hover:border-cyan-500/40 transition-all"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isCheckingConnection ? 'animate-spin text-cyan-400' : ''}`} />
-              <span>Test Connection</span>
-            </button>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              {onOpenElevenLabsModal && (
+                <button
+                  id="btn-open-elevenlabs-modal-settings"
+                  type="button"
+                  onClick={onOpenElevenLabsModal}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/25 transition-all shadow-sm"
+                >
+                  <Key className="w-3.5 h-3.5" />
+                  <span>Key Modal</span>
+                </button>
+              )}
+              <button
+                id="btn-test-connection"
+                type="button"
+                onClick={handleTestConnection}
+                disabled={isCheckingConnection}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 text-slate-200 hover:text-white hover:border-cyan-500/40 transition-all"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isCheckingConnection ? 'animate-spin text-cyan-400' : ''}`} />
+                <span>Test Status</span>
+              </button>
+            </div>
           </div>
 
           {/* Status badge */}
@@ -242,6 +325,75 @@ export const Settings: React.FC<SettingsProps> = ({
               Status: <strong className="text-slate-100">{statusMessage}</strong>
             </span>
           </div>
+
+          {/* Indic Language Compatibility Indicators */}
+          <div className="p-3 rounded-xl bg-slate-950/40 border border-slate-800/80 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-slate-300 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Indic Language Compatibility (Multilingual v2)</span>
+              </span>
+              <span className="text-[10px] text-cyan-400 font-mono">10 Indic Scripts</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { name: 'Hindi', script: 'हिन्दी' },
+                { name: 'Tamil', script: 'தமிழ்' },
+                { name: 'Telugu', script: 'తెలుగు' },
+                { name: 'Bengali', script: 'বাংলা' },
+                { name: 'Marathi', script: 'मराठी' },
+                { name: 'Gujarati', script: 'ગુજરાતી' },
+                { name: 'Kannada', script: 'ಕನ್ನಡ' },
+                { name: 'Malayalam', script: 'മലയാളം' },
+                { name: 'Punjabi', script: 'ਪੰਜਾਬੀ' },
+                { name: 'Urdu', script: 'اردو' },
+              ].map((lang) => (
+                <span
+                  key={lang.name}
+                  className="px-2 py-0.5 rounded text-[10px] bg-slate-900 border border-slate-800 text-slate-300 font-medium"
+                >
+                  {lang.name} <span className="text-cyan-400 font-sans ml-1 text-[9px]">{lang.script}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick API Key Update Form with mask/unmask */}
+          <form onSubmit={handleSaveElevenLabsKey} className="pt-2 border-t border-slate-800/80 space-y-2">
+            <label htmlFor="input-settings-elevenlabs-key" className="block text-xs font-semibold text-slate-300">
+              Update ElevenLabs API Key
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1">
+                <input
+                  id="input-settings-elevenlabs-key"
+                  type={showElevenLabsKey ? 'text' : 'password'}
+                  value={newElevenLabsKey}
+                  onChange={(e) => setNewElevenLabsKey(e.target.value)}
+                  placeholder="Enter new ElevenLabs API Key (xi-api-key)"
+                  className="w-full pl-3 pr-10 py-2 rounded-xl text-xs bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500 font-mono transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowElevenLabsKey(!showElevenLabsKey)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                  title={showElevenLabsKey ? 'Hide key' : 'Show key'}
+                >
+                  {showElevenLabsKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+
+              <button
+                id="btn-save-elevenlabs-key"
+                type="submit"
+                disabled={isSavingElevenLabs || !newElevenLabsKey.trim()}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all shrink-0 flex items-center justify-center gap-1.5"
+              >
+                {isSavingElevenLabs && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                <span>{isSavingElevenLabs ? 'Validating...' : 'Validate & Save'}</span>
+              </button>
+            </div>
+          </form>
 
           <p className="text-[11px] text-slate-400 leading-relaxed">
             Note: Your <code className="text-cyan-400 bg-slate-900 px-1 py-0.5 rounded">ELEVENLABS_API_KEY</code> is kept strictly on the Express server in your environment configuration and is never exposed in browser code.

@@ -1,6 +1,138 @@
 {
   "generations": [
     {
+      "id": "gen_1789215168832_5c0dlpp",
+      "text": "Testing ElevenLabs audio streaming.",
+      "voiceId": "pNInz6obpgDQGcFmaJgB",
+      "voiceName": "Adam - Dominant, Firm",
+      "modelId": "eleven_multilingual_v2",
+      "audioUrl": "/api/audio/voxia-tts-2026-09-12.mp3",
+      "audioFileName": "voxia-tts-2026-09-12.mp3",
+      "format": "mp3",
+      "characterCount": 35,
+      "wordCount": 4,
+      "durationSeconds": 2,
+      "createdAt": "2026-09-12T12:12:48.864Z",
+      "status": "completed",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75,
+        "style": 0,
+        "use_speaker_boost": true,
+        "speed": 1
+      }
+    },
+    {
+      "id": "gen_1789215165667_kaflfs3",
+      "text": "Testing Google voice synthesis with Journey.",
+      "voiceId": "google-en-us-journey",
+      "voiceName": "Google US English (Journey)",
+      "modelId": "google_neural_tts",
+      "audioUrl": "/api/audio/voxia-tts-2026-09-12.mp3",
+      "audioFileName": "voxia-tts-2026-09-12.mp3",
+      "format": "mp3",
+      "characterCount": 44,
+      "wordCount": 6,
+      "durationSeconds": 3,
+      "createdAt": "2026-09-12T12:12:45.667Z",
+      "status": "completed",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75,
+        "style": 0,
+        "use_speaker_boost": true,
+        "speed": 1
+      }
+    },
+    {
+      "id": "gen_1789215162165_3w0q4op",
+      "text": "Testing ElevenLabs voice synthesis with Adam.",
+      "voiceId": "pNInz6obpgDQGcFmaJgB",
+      "voiceName": "Adam - Dominant, Firm",
+      "modelId": "eleven_multilingual_v2",
+      "audioUrl": "/api/audio/voxia-tts-2026-09-12.mp3",
+      "audioFileName": "voxia-tts-2026-09-12.mp3",
+      "format": "mp3",
+      "characterCount": 45,
+      "wordCount": 6,
+      "durationSeconds": 3,
+      "createdAt": "2026-09-12T12:12:42.166Z",
+      "status": "completed",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75,
+        "style": 0,
+        "use_speaker_boost": true,
+        "speed": 1
+      }
+    },
+    {
+      "id": "gen_1789215157187_8hqyfbl",
+      "text": "Testing ElevenLabs voice synthesis with Adam.",
+      "voiceId": "pNInz6obpgDQGcFmaJgB",
+      "voiceName": "Adam - Dominant, Firm",
+      "modelId": "eleven_multilingual_v2",
+      "audioUrl": "/api/audio/voxia-tts-2026-09-12.mp3",
+      "audioFileName": "voxia-tts-2026-09-12.mp3",
+      "format": "mp3",
+      "characterCount": 45,
+      "wordCount": 6,
+      "durationSeconds": 3,
+      "createdAt": "2026-09-12T12:12:37.188Z",
+      "status": "completed",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75,
+        "style": 0,
+        "use_speaker_boost": true,
+        "speed": 1
+      }
+    },
+    {
+      "id": "gen_1789214688362_909hd3p",
+      "text": "fsfsf",
+      "voiceId": "pNInz6obpgDQGcFmaJgB",
+      "voiceName": "Adam",
+      "modelId": "eleven_multilingual_v2",
+      "audioUrl": "/api/audio/voxia-tts-2026-09-12.mp3",
+      "audioFileName": "voxia-tts-2026-09-12.mp3",
+      "format": "mp3",
+      "characterCount": 5,
+      "wordCount": 1,
+      "durationSeconds": 1,
+      "createdAt": "2026-09-12T12:04:48.376Z",
+      "status": "completed",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75,
+        "style": 0,
+        "use_speaker_boost": true,
+        "speed": 1
+      }
+    },
+    {
+      "id": "gen_1789214205237_vmc54x9",
+      "text": "hey michael where are you",
+      "voiceId": "sarvam-kabir",
+      "voiceName": "Sarvam Kabir (Hindi Classical Storyteller)",
+      "modelId": "bulbul:v3",
+      "audioUrl": "/api/audio/voxia-tts-2026-09-12.mp3",
+      "audioFileName": "voxia-tts-2026-09-12.mp3",
+      "format": "mp3",
+      "characterCount": 25,
+      "wordCount": 5,
+      "durationSeconds": 2,
+      "createdAt": "2026-09-12T11:56:45.238Z",
+      "status": "completed",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.75,
+        "style": 0,
+        "use_speaker_boost": true,
+        "speed": 1
+      }
+    },
+    {
       "id": "gen_1789152417605_1gekoll",
       "text": "नमस्ते, यह स्ट्रीमिंग का परीक्षण है।",
       "voiceId": "sarvam-kabir",
@@ -538,10 +670,10 @@
   "usage": {
     "tier": "Creator Pro",
     "characterLimit": 100000,
-    "characterCount": 10000,
-    "charactersRemaining": 90000,
+    "characterCount": 10130,
+    "charactersRemaining": 89870,
     "nextResetDate": "2026-09-26T17:25:08.451Z",
-    "recentGenerations": 12,
+    "recentGenerations": 16,
     "historyUsage": [
       {
         "date": "2026-09-02",
@@ -571,6 +703,11 @@
       {
         "date": "2026-09-10",
         "characters": 248,
+        "generations": 4
+      },
+      {
+        "date": "2026-09-12",
+        "characters": 130,
         "generations": 4
       }
     ]

@@ -353,6 +353,23 @@ class ApiService {
     });
     return res.json();
   }
+
+  // Save new ElevenLabs API key
+  public async saveElevenLabsApiKey(apiKey: string): Promise<{
+    success: boolean;
+    valid: boolean;
+    tier?: string;
+    characterLimit?: number;
+    characterCount?: number;
+    message?: string;
+  }> {
+    const res = await fetch(`${this.baseUrl}/settings/save-elevenlabs-key`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey }),
+    });
+    return res.json();
+  }
 }
 
 export const api = new ApiService();

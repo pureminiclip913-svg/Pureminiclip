@@ -21,6 +21,8 @@ import { Projects } from './pages/Projects';
 import { Usage } from './pages/Usage';
 import { Settings } from './pages/Settings';
 import { Account } from './pages/Account';
+import { AddSarvamKeyModal } from './components/AddSarvamKeyModal';
+import { AddElevenLabsKeyModal } from './components/AddElevenLabsKeyModal';
 import { Menu, Sparkles } from 'lucide-react';
 
 export default function App() {
@@ -36,6 +38,8 @@ export default function App() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
   const [activeAudioUrl, setActiveAudioUrl] = useState<string | null>(null);
+  const [isSarvamModalOpen, setIsSarvamModalOpen] = useState(false);
+  const [isElevenLabsModalOpen, setIsElevenLabsModalOpen] = useState(false);
 
   const addToast = (toast: Omit<ToastNotification, 'id'>) => {
     const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
@@ -50,6 +54,15 @@ export default function App() {
 
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const handleSelectVoice = (voiceId: string) => {
+    setSelectedVoiceId(voiceId);
+    try {
+      localStorage.setItem('voxia_selected_voice', voiceId);
+    } catch {
+      // ignore
+    }
   };
 
   // Initial load
@@ -68,8 +81,24 @@ export default function App() {
         if (!isMounted) return;
 
         if (voicesData.status === 'fulfilled' && voicesData.value.length > 0) {
-          setVoices(voicesData.value);
-          setSelectedVoiceId(voicesData.value[0].voice_id);
+          const fetchedVoices = voicesData.value;
+          setVoices(fetchedVoices);
+
+          // Restore user's explicit preference, or select a flagship ElevenLabs / Sarvam voice first.
+          // Never default or auto-switch to Google voice system.
+          const savedVoiceId = localStorage.getItem('voxia_selected_voice');
+          const matchedSaved = savedVoiceId && fetchedVoices.find((v) => v.voice_id === savedVoiceId);
+
+          if (matchedSaved) {
+            setSelectedVoiceId(matchedSaved.voice_id);
+          } else {
+            const flagshipVoice =
+              fetchedVoices.find((v) => v.voice_id === 'pNInz6obpgDQGcFmaJgB') || // Adam
+              fetchedVoices.find((v) => v.provider === 'sarvam') ||
+              fetchedVoices.find((v) => !v.voice_id.startsWith('google-')) ||
+              fetchedVoices[0];
+            setSelectedVoiceId(flagshipVoice.voice_id);
+          }
         }
 
         if (gensData.status === 'fulfilled') {
@@ -263,13 +292,13 @@ export default function App() {
 
   // Select voice and go to Studio
   const handleSelectVoiceAndStudio = (voiceId: string) => {
-    setSelectedVoiceId(voiceId);
+    handleSelectVoice(voiceId);
     setActiveTab('studio');
   };
 
   // Open generation in Studio
   const handleOpenGenerationInStudio = (gen: Generation) => {
-    setSelectedVoiceId(gen.voiceId);
+    handleSelectVoice(gen.voiceId);
     setActiveProject({
       id: `from_gen_${gen.id}`,
       name: `Session: ${gen.voiceName}`,
@@ -367,11 +396,13 @@ export default function App() {
               <Studio
                 voices={voices}
                 selectedVoiceId={selectedVoiceId}
-                onSelectVoice={setSelectedVoiceId}
+                onSelectVoice={handleSelectVoice}
                 activeProject={activeProject}
                 onSaveProject={handleSaveProject}
                 onGenerationComplete={handleGenerationComplete}
                 addToast={addToast}
+                onOpenSarvamModal={() => setIsSarvamModalOpen(true)}
+                onOpenElevenLabsModal={() => setIsElevenLabsModalOpen(true)}
               />
             )}
 
@@ -382,6 +413,8 @@ export default function App() {
                 onSelectVoiceAndStudio={handleSelectVoiceAndStudio}
                 onRefreshVoices={handleRefreshVoices}
                 isRefreshing={isRefreshingVoices}
+                onOpenSarvamModal={() => setIsSarvamModalOpen(true)}
+                onOpenElevenLabsModal={() => setIsElevenLabsModalOpen(true)}
               />
             )}
 
@@ -422,8 +455,10 @@ export default function App() {
               <Settings
                 voices={voices}
                 defaultVoiceId={selectedVoiceId}
-                onSetDefaultVoiceId={setSelectedVoiceId}
+                onSetDefaultVoiceId={handleSelectVoice}
                 addToast={addToast}
+                onOpenElevenLabsModal={() => setIsElevenLabsModalOpen(true)}
+                onOpenSarvamModal={() => setIsSarvamModalOpen(true)}
               />
             )}
 
@@ -433,6 +468,22 @@ export default function App() {
           </main>
         </div>
       )}
+
+      {/* Global Add / Update Sarvam AI Key Modal */}
+      <AddSarvamKeyModal
+        isOpen={isSarvamModalOpen}
+        onClose={() => setIsSarvamModalOpen(false)}
+        onKeyUpdated={handleRefreshVoices}
+        addToast={addToast}
+      />
+
+      {/* Global Add / Update ElevenLabs Key Modal */}
+      <AddElevenLabsKeyModal
+        isOpen={isElevenLabsModalOpen}
+        onClose={() => setIsElevenLabsModalOpen(false)}
+        onKeyUpdated={handleRefreshVoices}
+        addToast={addToast}
+      />
     </div>
   );
 }

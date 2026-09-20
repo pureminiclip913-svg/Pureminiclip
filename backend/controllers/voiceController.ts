@@ -155,8 +155,24 @@ export async function getVoicePreviewAudio(req: Request, res: Response, next: Ne
       return;
     }
 
-    // If ElevenLabs preview URL is present and remote
+    // If ElevenLabs preview URL is present and remote, proxy and cache for seamless iframe playback
     if (voice.preview_url && voice.preview_url.startsWith('http')) {
+      try {
+        const audioRes = await fetch(voice.preview_url);
+        if (audioRes.ok) {
+          const buf = Buffer.from(await audioRes.arrayBuffer());
+          previewCache.set(voiceId, buf);
+          const rawContentType = audioRes.headers.get('content-type') || '';
+          const contentType = rawContentType.startsWith('audio/') ? rawContentType : 'audio/mpeg';
+          res.setHeader('Content-Type', contentType);
+          res.setHeader('Content-Length', buf.length);
+          res.setHeader('Cache-Control', 'public, max-age=86400');
+          res.send(buf);
+          return;
+        }
+      } catch {
+        // Fall back to direct redirect if proxy fetch encounters issues
+      }
       res.redirect(voice.preview_url);
       return;
     }

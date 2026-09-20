@@ -13,6 +13,7 @@ import usageRouter from './backend/routes/usage.js';
 
 import { storageService } from './backend/services/storageService.js';
 import { ttsService } from './backend/services/ttsService.js';
+import { voiceService } from './backend/services/voiceService.js';
 import { rateLimiter } from './backend/middleware/rateLimit.js';
 import { errorHandler } from './backend/middleware/errorHandler.js';
 import { EnvLoader } from './backend/utils/envLoader.js';
@@ -168,6 +169,77 @@ app.post('/api/settings/test-key', async (req: Request, res: Response) => {
         message: 'Invalid API key or unauthorized by ElevenLabs.',
       });
     }
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      valid: false,
+      message: err?.message || 'Failed to reach ElevenLabs API.',
+    });
+  }
+});
+
+// 3b. Save & activate ElevenLabs API key endpoint
+app.post('/api/settings/save-elevenlabs-key', async (req: Request, res: Response) => {
+  const { apiKey } = req.body || {};
+  if (!apiKey || typeof apiKey !== 'string' || apiKey.trim().length === 0) {
+    res.status(400).json({ success: false, valid: false, message: 'A non-empty ElevenLabs API key is required.' });
+    return;
+  }
+  const cleanKey = apiKey.trim();
+
+  try {
+    const checkRes = await fetch('https://api.elevenlabs.io/v1/user/subscription', {
+      headers: { 'xi-api-key': cleanKey },
+    });
+
+    if (checkRes.ok) {
+      const data = (await checkRes.json()) as any;
+      EnvLoader.saveKey('ELEVENLABS_API_KEY', cleanKey);
+      voiceService.clearCache();
+
+      res.status(200).json({
+        success: true,
+        valid: true,
+        tier: data.tier || 'active',
+        characterLimit: data.character_limit,
+        characterCount: data.character_count,
+        status: data.status,
+        message: `ElevenLabs key verified and saved! Tier: ${data.tier || 'Active'}.`,
+      });
+      return;
+    }
+
+    // Fallback check against models in case user has restricted TTS key without user/subscription scope
+    const modelsRes = await fetch('https://api.elevenlabs.io/v1/models', {
+      headers: { 'xi-api-key': cleanKey },
+    });
+
+    if (modelsRes.ok) {
+      EnvLoader.saveKey('ELEVENLABS_API_KEY', cleanKey);
+      voiceService.clearCache();
+
+      res.status(200).json({
+        success: true,
+        valid: true,
+        tier: 'active',
+        message: 'ElevenLabs key verified with model synthesis permissions and saved!',
+      });
+      return;
+    }
+
+    const errText = await checkRes.text();
+    let msg = 'Invalid API key or unauthorized by ElevenLabs.';
+    try {
+      const parsed = JSON.parse(errText);
+      msg = parsed?.detail?.message || parsed?.message || msg;
+    } catch {}
+
+    res.status(200).json({
+      success: false,
+      valid: false,
+      status: checkRes.status,
+      message: `ElevenLabs rejected key (HTTP ${checkRes.status}): ${msg}`,
+    });
   } catch (err: any) {
     res.status(500).json({
       success: false,
